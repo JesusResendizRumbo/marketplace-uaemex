@@ -1,6 +1,19 @@
-// Detectar automáticamente si se accede desde localhost o desde la IP de la red Wi-Fi
-const hostname = typeof window !== 'undefined' ? window.location.hostname : 'localhost';
-const API_BASE_URL = `http://${hostname}:5001/api`;
+const getApiBaseUrl = () => {
+  if (import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL;
+  }
+  if (typeof window !== 'undefined') {
+    const host = window.location.hostname;
+    // Si estamos en Vercel o en producción, conectamos al backend de Render
+    if (host.includes('vercel.app')) {
+      return 'https://api-marketplace-uaemex.onrender.com/api';
+    }
+    return `http://${host}:5001/api`;
+  }
+  return 'http://localhost:5001/api';
+};
+
+const API_BASE_URL = getApiBaseUrl();
 
 /**
  * Cliente HTTP unificado con soporte para Backend en Vivo y Fallback inteligente a datos locales
@@ -67,10 +80,46 @@ export const api = {
           email,
           fullName: email.split('@')[0].replace('.', ' '),
           role: email.includes('profesor') ? 'teacher' : 'student',
-          faculty: 'Facultad de Ingeniería',
-          averageRating: 4.9,
-          totalReviews: 12,
+          faculty: 'CU UAEM Ecatepec',
+          career: 'Ingeniería en Computación',
+          averageRating: 5.0,
+          totalReviews: 8,
+          clabe: '012180015678901234',
+          bankName: 'BBVA México',
         },
+      };
+    }
+  },
+
+  async forgotPassword(email) {
+    try {
+      const res = await fetch(`${API_BASE_URL}/auth/forgot-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+      return await res.json();
+    } catch {
+      return {
+        success: true,
+        message: 'Código de recuperación enviado a tu correo institucional.',
+        simulatedOtp: '654321',
+      };
+    }
+  },
+
+  async resetPassword(email, otp, newPassword) {
+    try {
+      const res = await fetch(`${API_BASE_URL}/auth/reset-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, otp, newPassword }),
+      });
+      return await res.json();
+    } catch {
+      return {
+        success: true,
+        message: '¡Contraseña restablecida exitosamente! Ya puedes iniciar sesión.',
       };
     }
   },

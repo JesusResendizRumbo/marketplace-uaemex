@@ -250,30 +250,100 @@ export const login = async (req, res, next) => {
 };
 
 /**
- * Obtener perfil del usuario autenticado (/auth/me)
+ * Solicitar recuperación de contraseña (envío de código OTP)
  */
-export const getMe = async (req, res, next) => {
+export const forgotPassword = async (req, res, next) => {
   try {
-    const result = await query(
-      `SELECT u.id, u.email, u.full_name, u.role, u.career, u.phone_number, u.avatar_url, 
-              u.average_rating, u.total_reviews, u.created_at,
-              f.id as faculty_id, f.name as faculty_name, f.campus_zone
-       FROM users u
-       LEFT JOIN faculties f ON u.faculty_id = f.id
-       WHERE u.id = $1`,
-      [req.user.id]
-    );
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ success: false, error: 'El correo electrónico es requerido.' });
+    }
+
+    const normalized = email.trim().toLowerCase();
+    const result = await query('SELECT id, full_name, email FROM users WHERE email = $1', [normalized]);
 
     if (result.rows.length === 0) {
-      return res.status(404).json({
-        success: false,
-        error: 'Usuario no encontrado.',
+      // Por seguridad para no revelar existencia de cuentas
+      return res.status(200).json({
+        success: true,
+        message: 'Si el correo está registrado en la comunidad UAEMex, recibirás un código de recuperación.',
       });
     }
 
+    const user = result.rows[0];
+    const resetOtp = generateOTP();
+    const resetExpires = new Date(Date.now() + 15 * 60 * 1000); // 15 min
+
+    await query(
+      'UPDATE users SET verification_token = $1, token_expires_at = $2 WHERE id = $3',
+      [resetOtp, resetExpires, user.id]
+    );
+
+    await sendVerificationOTP(user.email, resetOtp, user.full_name);
+
     res.status(200).json({
       success: true,
-      user: result.rows[0],
+      message: 'Código de recuperación enviado a tu correo institucional.',
+      email: user.email,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Restablecer contraseña con código OTP
+ */
+export const resetPassword = async (req, res, next) => {
+  try {
+    const { email, otp, newPassword } = req.body;
+
+    if (!email || !otp || !newPassword) {
+      return res.status(400).json({
+        success: false,
+        error: 'Todos los campos son obligatorios (correo, código OTP y nueva contraseña).',
+      });
+    }
+
+    if (newPassword.length < 8) {
+      return res.status(400).json({
+        success: false,
+        error: 'La nueva contraseña debe tener al menos 8 caracteres.',
+      });
+    }
+
+    const normalized = email.trim().toLowerCase();
+    const result = await query(
+      'SELECT id, verification_token, token_expires_at FROM users WHERE email = $1',
+      [normalized]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(400).json({ success: false, error: 'Código o usuario inválido.' });
+    }
+
+    const user = result.rows[0];
+
+    if (user.verification_token !== otp.trim()) {
+      return res.status(400).json({ success: false, error: 'Código de recuperación incorrecto.' });
+    }
+
+    if (new Date() > new Date(user.token_expires_at)) {
+      return res.status(400).json({ success: false, error: 'El código OTP ha expirado. Solicita uno nuevo.' });
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    const passwordHash = await bcrypt.hash(newPassword, salt);
+
+    await query(
+      'UPDATE users SET password_hash = $1, verification_token = NULL, token_expires_at = NULL, is_verified = TRUE WHERE id = $2',
+      [passwordHash, user.id]
+    );
+
+    res.status(200).json({
+      success: true,
+      message: '¡Contraseña restablecida exitosamente! Ya puedes iniciar sesión.',
     });
   } catch (error) {
     next(error);

@@ -1,13 +1,17 @@
 import React, { useState } from 'react';
 import { X, Upload, DollarSign, Tag, MapPin, Sparkles } from 'lucide-react';
+import { MOCK_CATEGORIES, MOCK_FACULTIES } from '../data/mockData.js';
 
 export default function PublishModal({ categories, faculties, onClose, onPublish }) {
+  const safeCategories = (categories && categories.length > 0) ? categories : MOCK_CATEGORIES;
+  const safeFaculties = (faculties && faculties.length > 0) ? faculties : MOCK_FACULTIES;
+
   const [formData, setFormData] = useState({
     title: '',
     description: '',
     price: '',
-    categoryId: categories[0]?.id || '',
-    facultyId: faculties[0]?.id || '',
+    categoryId: safeCategories[0]?.id || 'cat-1',
+    facultyId: safeFaculties[0]?.id || 'eca-1',
     condition: 'good',
     isExchangeable: false,
     imageUrl: '',
@@ -17,6 +21,9 @@ export default function PublishModal({ categories, faculties, onClose, onPublish
     e.preventDefault();
     if (!formData.title || !formData.description) return;
 
+    const selectedCategory = safeCategories.find(c => c.id === formData.categoryId) || safeCategories[0];
+    const selectedFaculty = safeFaculties.find(f => f.id === formData.facultyId) || safeFaculties[0];
+
     const newProduct = {
       id: `prod-${Date.now()}`,
       title: formData.title,
@@ -25,13 +32,13 @@ export default function PublishModal({ categories, faculties, onClose, onPublish
       condition: formData.condition,
       status: 'available',
       is_exchangeable: formData.isExchangeable,
-      category_id: formData.categoryId,
-      category_name: categories.find(c => c.id === formData.categoryId)?.name || 'Material de Estudio',
-      faculty_name: faculties.find(f => f.id === formData.facultyId)?.name || 'Facultad de Ingeniería',
-      campus_zone: faculties.find(f => f.id === formData.facultyId)?.campus_zone || 'CU',
+      category_id: selectedCategory.id,
+      category_name: selectedCategory.name,
+      faculty_name: selectedFaculty.name,
+      campus_zone: selectedFaculty.campus_zone || 'CU Ecatepec',
       images: formData.imageUrl ? [formData.imageUrl] : ['https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=800&q=80'],
-      seller_name: 'Tú (Usuario UAEMex)',
-      seller_career: 'Estudiante',
+      seller_name: 'Tú (Estudiante CU Ecatepec)',
+      seller_career: selectedFaculty.name,
       seller_rating: 5.0,
       seller_reviews: 0,
       views_count: 1,
@@ -55,7 +62,7 @@ export default function PublishModal({ categories, faculties, onClose, onPublish
           </div>
           <div>
             <h2 style={{ fontSize: '1.25rem', fontWeight: '800', color: '#0f172a' }}>Publicar un Artículo</h2>
-            <p style={{ fontSize: '0.8rem', color: '#64748b' }}>Ofrece tu material académico a la comunidad universitaria</p>
+            <p style={{ fontSize: '0.8rem', color: '#64748b' }}>Ofrece tu material académico en el plantel CU Ecatepec</p>
           </div>
         </div>
 
@@ -65,7 +72,7 @@ export default function PublishModal({ categories, faculties, onClose, onPublish
             <input 
               type="text" 
               className="form-input" 
-              placeholder="ej. Bata blanca de laboratorio talla M" 
+              placeholder="ej. Código Civil del Estado de México o Bata Blanca" 
               required
               value={formData.title}
               onChange={(e) => setFormData({ ...formData, title: e.target.value })}
@@ -80,7 +87,7 @@ export default function PublishModal({ categories, faculties, onClose, onPublish
                 value={formData.categoryId}
                 onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
               >
-                {categories.map(c => (
+                {safeCategories.map(c => (
                   <option key={c.id} value={c.id}>{c.name}</option>
                 ))}
               </select>
@@ -103,14 +110,14 @@ export default function PublishModal({ categories, faculties, onClose, onPublish
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
             <div className="form-group">
-              <label className="form-label">Facultad / Campus de Entrega *</label>
+              <label className="form-label">Carrera / Área en CU Ecatepec *</label>
               <select 
                 className="filter-select"
                 value={formData.facultyId}
                 onChange={(e) => setFormData({ ...formData, facultyId: e.target.value })}
               >
-                {faculties.map(f => (
-                  <option key={f.id} value={f.id}>{f.name} ({f.campus_zone})</option>
+                {safeFaculties.map(f => (
+                  <option key={f.id} value={f.id}>{f.name}</option>
                 ))}
               </select>
             </div>
@@ -122,7 +129,7 @@ export default function PublishModal({ categories, faculties, onClose, onPublish
                 value={formData.condition}
                 onChange={(e) => setFormData({ ...formData, condition: e.target.value })}
               >
-                <option value="new">Nuevo / Sin usar</option>
+                <option value="new">Nuevo (Sellado)</option>
                 <option value="like_new">Como nuevo</option>
                 <option value="good">Buen estado</option>
                 <option value="acceptable">Con detalles estéticos</option>
@@ -135,7 +142,7 @@ export default function PublishModal({ categories, faculties, onClose, onPublish
             <input 
               type="url" 
               className="form-input" 
-              placeholder="https://images.unsplash.com/... (O déjalo vacío para usar imagen por defecto)"
+              placeholder="https://images.unsplash.com/... (Opcional, se usará imagen por defecto)"
               value={formData.imageUrl}
               onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
             />
@@ -167,7 +174,7 @@ export default function PublishModal({ categories, faculties, onClose, onPublish
           </div>
 
           <button type="submit" className="btn btn-primary" style={{ width: '100%', padding: '12px' }}>
-            <span>Publicar en el Catálogo UAEMex</span>
+            <span>Publicar en el Catálogo de CU Ecatepec</span>
           </button>
         </form>
       </div>

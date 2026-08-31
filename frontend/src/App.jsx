@@ -42,16 +42,13 @@ export default function App() {
   const [categories, setCategories] = useState([]);
   const [faculties, setFaculties] = useState([]);
   const [lostItems, setLostItems] = useState([]);
-  const [user, setUser] = useState({
-    id: 'user-demo-1',
-    fullName: 'Carlos Alberto López',
-    email: 'carlos.lopez@alumno.uaemex.mx',
-    career: 'Ingeniería en Computación',
-    phoneNumber: '55 9876 5432',
-    preferredPickupSpot: 'Biblioteca Central (CU Ecatepec)',
-    clabe: '012180015678901234',
-    bankName: 'BBVA México',
-    role: 'student',
+  const [user, setUser] = useState(() => {
+    try {
+      const saved = localStorage.getItem('uaemex_user');
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
   });
 
   // Filtros
@@ -131,7 +128,10 @@ export default function App() {
             setIsPublishOpen(true);
           }
         }}
-        onLogout={() => setUser(null)}
+        onLogout={() => {
+          localStorage.removeItem('uaemex_user');
+          setUser(null);
+        }}
         onOpenChat={() => setActiveChatProduct(products[0])}
         onOpenProfile={() => setIsProfileOpen(true)}
       />
@@ -350,7 +350,10 @@ export default function App() {
         <AuthModal 
           initialMode={authModalMode}
           onClose={() => setAuthModalMode(null)}
-          onAuthSuccess={(userData) => setUser(userData)}
+          onAuthSuccess={(userData) => {
+            localStorage.setItem('uaemex_user', JSON.stringify(userData));
+            setUser(userData);
+          }}
         />
       )}
 
@@ -365,7 +368,10 @@ export default function App() {
       {isProfileOpen && (
         <ProfileModal 
           user={user}
-          onUpdateUser={(updated) => setUser(updated)}
+          onUpdateUser={(updated) => {
+            localStorage.setItem('uaemex_user', JSON.stringify(updated));
+            setUser(updated);
+          }}
           onClose={() => setIsProfileOpen(false)}
           onOpenReviewForProduct={(sellerName, productTitle) => {
             setReviewModalData({ sellerName, productTitle });
