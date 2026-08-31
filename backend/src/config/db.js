@@ -6,11 +6,11 @@ dotenv.config();
 const { Pool } = pkg;
 
 // Configuración del Pool de conexiones PostgreSQL
+const isLocal = !process.env.DATABASE_URL || process.env.DATABASE_URL.includes('localhost') || process.env.DATABASE_URL.includes('127.0.0.1');
+
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: process.env.NODE_ENV === 'production' || process.env.DATABASE_URL?.includes('supabase.co')
-    ? { rejectUnauthorized: false }
-    : false,
+  ssl: isLocal ? false : { rejectUnauthorized: false },
 });
 
 pool.on('connect', () => {

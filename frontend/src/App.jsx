@@ -180,15 +180,15 @@ export default function App() {
                 <h3 style={{ fontSize: '1.05rem', fontWeight: '800' }}>Filtros de Búsqueda</h3>
               </div>
 
-              {/* Filtro por Facultad */}
+              {/* Filtro por Carrera */}
               <div className="filter-group">
-                <label className="filter-title">Facultad / Campus</label>
+                <label className="filter-title">Carrera (CU Ecatepec)</label>
                 <select 
                   className="filter-select"
                   value={selectedFaculty}
                   onChange={(e) => setSelectedFaculty(e.target.value)}
                 >
-                  <option value="">Todos los planteles UAEMex</option>
+                  <option value="">Todas las carreras de CU Ecatepec</option>
                   {faculties.map(f => (
                     <option key={f.id} value={f.name}>{f.name}</option>
                   ))}
@@ -311,7 +311,7 @@ export default function App() {
             <p style={{ fontSize: '0.8rem', color: '#94a3b8', marginTop: '4px' }}>Plataforma desarrollada para la comunidad estudiantil y académica de la UAEMex.</p>
           </div>
           <div style={{ fontSize: '0.8rem', color: '#cbd5e1', textAlign: 'right' }}>
-            Patria, Ciencia y Trabajo • Toluca, Estado de México
+            Patria, Ciencia y Trabajo • Ecatepec de Morelos, Estado de México
           </div>
         </div>
       </footer>
