@@ -36,9 +36,8 @@ export const register = async (req, res, next) => {
           error: 'Este correo institucional ya está registrado y verificado. Por favor inicia sesión.',
         });
       } else {
-        // Si no está verificado, actualizamos contraseña y generamos nuevo OTP
         const otpCode = generateOTP();
-        const otpExpiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutos
+        const otpExpiresAt = new Date(Date.now() + 15 * 60 * 1000);
         const salt = await bcrypt.genSalt(10);
         const passwordHash = await bcrypt.hash(password, salt);
 
@@ -60,15 +59,11 @@ export const register = async (req, res, next) => {
       }
     }
 
-    // Hash de contraseña
     const salt = await bcrypt.genSalt(10);
     const passwordHash = await bcrypt.hash(password, salt);
 
-    // Generar OTP
     const otpCode = generateOTP();
-    const otpExpiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 minutos
-
-    // Determinar rol inicial (docente o estudiante según correo)
+    const otpExpiresAt = new Date(Date.now() + 15 * 60 * 1000);
     const role = email.includes('@profesor.uaemex.mx') ? 'teacher' : 'student';
 
     const insertResult = await query(
@@ -78,7 +73,6 @@ export const register = async (req, res, next) => {
       [email, passwordHash, fullName, role, facultyId || null, career || null, phoneNumber || null, otpCode, otpExpiresAt]
     );
 
-    // Enviar código por correo
     await sendVerificationOTP(email, otpCode, fullName);
 
     res.status(201).json({
@@ -136,7 +130,6 @@ export const verifyOTP = async (req, res, next) => {
       });
     }
 
-    // Activar usuario
     await query(
       `UPDATE users 
        SET is_verified = TRUE, verification_token = NULL, token_expires_at = NULL 
@@ -144,7 +137,6 @@ export const verifyOTP = async (req, res, next) => {
       [user.id]
     );
 
-    // Generar JWT
     const token = jwt.sign(
       { id: user.id, email: user.email, role: user.role, facultyId: user.faculty_id },
       process.env.JWT_SECRET || 'super_secret_jwt_key_uaemex_2026_change_in_production',
@@ -208,7 +200,6 @@ export const login = async (req, res, next) => {
     }
 
     if (!user.is_verified) {
-      // Reenviar OTP automáticamente si no está verificado
       const newOtp = generateOTP();
       const otpExpires = new Date(Date.now() + 15 * 60 * 1000);
       await query('UPDATE users SET verification_token = $1, token_expires_at = $2 WHERE id = $3', [newOtp, otpExpires, user.id]);
@@ -222,7 +213,6 @@ export const login = async (req, res, next) => {
       });
     }
 
-    // Generar JWT
     const token = jwt.sign(
       { id: user.id, email: user.email, role: user.role, facultyId: user.faculty_id },
       process.env.JWT_SECRET || 'super_secret_jwt_key_uaemex_2026_change_in_production',
@@ -264,7 +254,6 @@ export const forgotPassword = async (req, res, next) => {
     const result = await query('SELECT id, full_name, email FROM users WHERE email = $1', [normalized]);
 
     if (result.rows.length === 0) {
-      // Por seguridad para no revelar existencia de cuentas
       return res.status(200).json({
         success: true,
         message: 'Si el correo está registrado en la comunidad UAEMex, recibirás un código de recuperación.',
@@ -273,7 +262,7 @@ export const forgotPassword = async (req, res, next) => {
 
     const user = result.rows[0];
     const resetOtp = generateOTP();
-    const resetExpires = new Date(Date.now() + 15 * 60 * 1000); // 15 min
+    const resetExpires = new Date(Date.now() + 15 * 60 * 1000);
 
     await query(
       'UPDATE users SET verification_token = $1, token_expires_at = $2 WHERE id = $3',
@@ -344,6 +333,37 @@ export const resetPassword = async (req, res, next) => {
     res.status(200).json({
       success: true,
       message: '¡Contraseña restablecida exitosamente! Ya puedes iniciar sesión.',
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Obtener perfil del usuario autenticado (/auth/me)
+ */
+export const getMe = async (req, res, next) => {
+  try {
+    const result = await query(
+      `SELECT u.id, u.email, u.full_name, u.role, u.career, u.phone_number, u.avatar_url, 
+              u.average_rating, u.total_reviews, u.clabe_interbancaria, u.bank_name, u.preferred_pickup_spot, u.created_at,
+              f.id as faculty_id, f.name as faculty_name, f.campus_zone
+       FROM users u
+       LEFT JOIN faculties f ON u.faculty_id = f.id
+       WHERE u.id = $1`,
+      [req.user.id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: 'Usuario no encontrado.',
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      user: result.rows[0],
     });
   } catch (error) {
     next(error);
