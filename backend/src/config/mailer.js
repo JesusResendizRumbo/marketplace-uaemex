@@ -1,5 +1,11 @@
 import nodemailer from 'nodemailer';
 import dotenv from 'dotenv';
+import dns from 'dns';
+
+// Forzar IPv4 para que la red de Render no falle con Google
+try {
+  dns.setDefaultResultOrder('ipv4first');
+} catch (e) {}
 
 dotenv.config();
 
@@ -11,6 +17,7 @@ const transporter = nodemailer.createTransport({
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS,
   },
+  family: 4, // Conexión estricta IPv4 para Render
   tls: {
     rejectUnauthorized: false,
   },
@@ -50,10 +57,10 @@ export const sendVerificationOTP = async (toEmail, otpCode, userName = 'Universi
   try {
     const info = await transporter.sendMail(mailOptions);
     console.log('✅ Correo OTP enviado con éxito a:', toEmail, info.response);
-    return true;
+    return info;
   } catch (error) {
     console.error('❌ Error enviando correo por SMTP Gmail:', error.message);
-    return false;
+    throw error;
   }
 };
 
