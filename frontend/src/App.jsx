@@ -12,6 +12,12 @@ import ProfileModal from './components/ProfileModal.jsx';
 import ReviewModal from './components/ReviewModal.jsx';
 import { api } from './services/api.js';
 import { 
+  MOCK_FACULTIES, 
+  MOCK_CATEGORIES, 
+  MOCK_PRODUCTS, 
+  MOCK_LOST_ITEMS 
+} from './data/mockData.js';
+import { 
   BookOpen, 
   FlaskConical, 
   Cpu, 
