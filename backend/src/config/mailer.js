@@ -41,13 +41,13 @@ export const sendVerificationOTP = async (toEmail, otpCode, userName = 'Universi
 
   const senderEmail = process.env.EMAIL_USER;
   const mailOptions = {
-    from: process.env.EMAIL_FROM || `"Marketplace UAEMex" <${senderEmail}>`,
+    from: process.env.EMAIL_FROM || `"PotroTrade UAEMex" <${senderEmail}>`,
     to: toEmail,
-    subject: `🎓 Tu Código de Verificación UAEMex: ${otpCode}`,
+    subject: `🎓 Tu Código de Verificación PotroTrade: ${otpCode}`,
     html: `
       <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; background-color: #ffffff;">
         <div style="background-color: #004d26; padding: 24px; text-align: center; color: #ffffff;">
-          <h1 style="margin: 0; font-size: 24px; color: #e5a823; font-weight: 800;">Marketplace Universitario UAEMex</h1>
+          <h1 style="margin: 0; font-size: 24px; color: #e5a823; font-weight: 800;">PotroTrade • UAEMex</h1>
           <p style="margin: 6px 0 0 0; font-size: 14px; opacity: 0.9;">Comunidad Universitaria Segura • CU Ecatepec</p>
         </div>
         

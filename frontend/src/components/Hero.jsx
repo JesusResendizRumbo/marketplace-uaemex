@@ -13,7 +13,7 @@ export default function Hero({ onExploreClick, onOpenPublish, totalProducts = 24
             </div>
             
             <h2 className="hero-title">
-              Marketplace Universitario <br />
+              PotroTrade <br />
               <span>CU UAEM Ecatepec</span>
             </h2>
 

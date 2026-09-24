@@ -182,45 +182,32 @@ export default function App() {
 
               {/* Filtro por Carrera */}
               <div className="filter-group">
-                <label className="filter-title">Carrera (CU Ecatepec)</label>
+                <label className="filter-title">Carrera</label>
                 <select 
                   className="filter-select"
                   value={selectedFaculty}
                   onChange={(e) => setSelectedFaculty(e.target.value)}
                 >
-                  <option value="">Todas las carreras de CU Ecatepec</option>
-                  {faculties.map(f => (
+                  <option value="">Todas las carreras</option>
+                  {(faculties.length > 0 ? faculties : MOCK_FACULTIES).map(f => (
                     <option key={f.id} value={f.name}>{f.name}</option>
                   ))}
                 </select>
               </div>
 
-              {/* Filtro por Categoría */}
+              {/* Filtro por Categoría (Lista Desplegable) */}
               <div className="filter-group">
-                <label className="filter-title">Categorías</label>
-                <div className="category-pill-list">
-                  <button 
-                    className={`category-pill ${selectedCategory === '' ? 'active' : ''}`}
-                    onClick={() => setSelectedCategory('')}
-                  >
-                    <span>Todas las categorías</span>
-                  </button>
-                  {categories.map(c => {
-                    const IconComp = ICON_MAP[c.icon] || Package;
-                    return (
-                      <button 
-                        key={c.id}
-                        className={`category-pill ${selectedCategory === c.id ? 'active' : ''}`}
-                        onClick={() => setSelectedCategory(c.id === selectedCategory ? '' : c.id)}
-                      >
-                        <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <IconComp size={15} />
-                          {c.name}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
+                <label className="filter-title">Categoría</label>
+                <select 
+                  className="filter-select"
+                  value={selectedCategory}
+                  onChange={(e) => setSelectedCategory(e.target.value)}
+                >
+                  <option value="">Todas las categorías</option>
+                  {(categories.length > 0 ? categories : MOCK_CATEGORIES).map(c => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
+                  ))}
+                </select>
               </div>
 
               {/* Filtro por Estado */}
@@ -307,8 +294,8 @@ export default function App() {
       <footer style={{ background: '#00361a', color: '#cbd5e1', padding: '36px 0', borderTop: '4px solid #e5a823' }}>
         <div className="container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '20px' }}>
           <div>
-            <div style={{ fontSize: '1.1rem', fontWeight: '800', color: '#ffffff' }}>Marketplace Universitario UAEMex</div>
-            <p style={{ fontSize: '0.8rem', color: '#94a3b8', marginTop: '4px' }}>Plataforma desarrollada para la comunidad estudiantil y académica de la UAEMex.</p>
+            <div style={{ fontSize: '1.1rem', fontWeight: '800', color: '#ffffff' }}>PotroTrade • CU UAEM Ecatepec</div>
+            <p style={{ fontSize: '0.8rem', color: '#94a3b8', marginTop: '4px' }}>Plataforma oficial de comercio universitario para la comunidad de CU Ecatepec.</p>
           </div>
           <div style={{ fontSize: '0.8rem', color: '#cbd5e1', textAlign: 'right' }}>
             Patria, Ciencia y Trabajo • Ecatepec de Morelos, Estado de México

@@ -20,7 +20,7 @@ export default function Navbar({
             <ShoppingBag size={24} />
           </div>
           <div className="brand-text">
-            <h1>Marketplace</h1>
+            <h1>PotroTrade</h1>
             <span>CU UAEM Ecatepec</span>
           </div>
         </div>

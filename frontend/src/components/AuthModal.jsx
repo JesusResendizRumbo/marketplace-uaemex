@@ -151,8 +151,8 @@ export default function AuthModal({ initialMode = 'login', onClose, onAuthSucces
             {mode === 'otp' ? <KeyRound size={28} /> : <ShieldCheck size={28} />}
           </div>
           <h2 style={{ fontSize: '1.3rem', fontWeight: '800', color: '#0f172a' }}>
-            {mode === 'login' && 'Iniciar Sesión'}
-            {mode === 'register' && 'Registro Institucional UAEMex'}
+            {mode === 'login' && 'Iniciar Sesión • PotroTrade'}
+            {mode === 'register' && 'Registro PotroTrade UAEMex'}
             {mode === 'otp' && 'Verificación de Correo'}
             {mode === 'forgot' && 'Recuperar Contraseña'}
             {mode === 'reset' && 'Nueva Contraseña'}

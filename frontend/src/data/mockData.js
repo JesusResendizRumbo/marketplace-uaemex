@@ -21,11 +21,13 @@ export const MOCK_CAMPUS = {
 };
 
 export const MOCK_FACULTIES = [
-  { id: 'eca-1', name: 'Ingeniería en Computación / Informática', campus_zone: 'CU Ecatepec' },
-  { id: 'eca-2', name: 'Licenciatura en Derecho', campus_zone: 'CU Ecatepec' },
-  { id: 'eca-3', name: 'Licenciatura en Psicología', campus_zone: 'CU Ecatepec' },
-  { id: 'eca-4', name: 'Licenciatura en Administración y Contaduría', campus_zone: 'CU Ecatepec' },
-  { id: 'eca-5', name: 'Tronco Común y Posgrados', campus_zone: 'CU Ecatepec' },
+  { id: 'eca-1', name: 'Ingeniería en Computación', campus_zone: 'CU Ecatepec' },
+  { id: 'eca-2', name: 'Licenciatura en Informática Administrativa', campus_zone: 'CU Ecatepec' },
+  { id: 'eca-3', name: 'Licenciatura en Derecho', campus_zone: 'CU Ecatepec' },
+  { id: 'eca-4', name: 'Licenciatura en Psicología', campus_zone: 'CU Ecatepec' },
+  { id: 'eca-5', name: 'Licenciatura en Administración', campus_zone: 'CU Ecatepec' },
+  { id: 'eca-6', name: 'Licenciatura en Contaduría', campus_zone: 'CU Ecatepec' },
+  { id: 'eca-7', name: 'Tronco Común y Posgrados', campus_zone: 'CU Ecatepec' },
 ];
 
 export const MOCK_CATEGORIES = [
