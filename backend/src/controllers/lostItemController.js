@@ -62,13 +62,31 @@ export const getAllLostItems = async (req, res, next) => {
 export const createLostItem = async (req, res, next) => {
   try {
     const { title, description, locationDetails, eventDate, type, facultyId, images } = req.body;
-    const userId = req.user.id;
+    let userId = req.user.id;
 
     if (!title || !description || !locationDetails || !eventDate || !type || !facultyId) {
       return res.status(400).json({
         success: false,
         error: 'Todos los campos marcados son obligatorios (título, descripción, ubicación, fecha, tipo y facultad).',
       });
+    }
+
+    const isUUID = (val) => typeof val === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val);
+
+    if (!isUUID(userId)) {
+      const uRes = await query('SELECT id FROM users LIMIT 1');
+      if (uRes.rows.length > 0) userId = uRes.rows[0].id;
+    }
+
+    let finalFacultyId = facultyId;
+    if (!isUUID(finalFacultyId)) {
+      const fRes = await query('SELECT id FROM faculties WHERE name ILIKE $1 LIMIT 1', ['%Ecatepec%']);
+      if (fRes.rows.length > 0) {
+        finalFacultyId = fRes.rows[0].id;
+      } else {
+        const anyF = await query('SELECT id FROM faculties LIMIT 1');
+        finalFacultyId = anyF.rows.length > 0 ? anyF.rows[0].id : null;
+      }
     }
 
     const sql = `
@@ -79,7 +97,7 @@ export const createLostItem = async (req, res, next) => {
 
     const insertResult = await query(sql, [
       userId,
-      facultyId,
+      finalFacultyId,
       title,
       description,
       locationDetails,

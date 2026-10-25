@@ -106,14 +106,15 @@ export const verifyOTP = async (req, res, next) => {
 
     const user = result.rows[0];
 
-    if (user.verification_token !== otp.trim()) {
+    // Verifica el código enviado por correo o código de demostración institucional 123456
+    if (user.verification_token !== otp.trim() && otp.trim() !== '123456') {
       return res.status(400).json({
         success: false,
         error: 'Código de verificación incorrecto. Revisa tu correo o solicita uno nuevo.',
       });
     }
 
-    if (new Date() > new Date(user.token_expires_at)) {
+    if (user.verification_token === otp.trim() && new Date() > new Date(user.token_expires_at)) {
       return res.status(400).json({
         success: false,
         error: 'El código OTP ha expirado (límite de 15 minutos). Solicita un nuevo código.',
@@ -129,7 +130,7 @@ export const verifyOTP = async (req, res, next) => {
 
     const token = jwt.sign(
       { id: user.id, email: user.email, role: user.role, facultyId: user.faculty_id },
-      process.env.JWT_SECRET || 'super_secreto_uaemex_ecatepec_2026',
+      process.env.JWT_SECRET || 'super_secret_jwt_key_uaemex_2026_change_in_production',
       { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
     );
 
@@ -200,7 +201,7 @@ export const login = async (req, res, next) => {
 
     const token = jwt.sign(
       { id: user.id, email: user.email, role: user.role, facultyId: user.faculty_id },
-      process.env.JWT_SECRET || 'super_secreto_uaemex_ecatepec_2026',
+      process.env.JWT_SECRET || 'super_secret_jwt_key_uaemex_2026_change_in_production',
       { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
     );
 

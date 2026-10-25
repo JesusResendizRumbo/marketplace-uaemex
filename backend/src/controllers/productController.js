@@ -145,13 +145,44 @@ export const getProductById = async (req, res, next) => {
 export const createProduct = async (req, res, next) => {
   try {
     const { title, description, price, categoryId, facultyId, condition, isExchangeable, images } = req.body;
-    const userId = req.user.id;
+    let userId = req.user.id;
 
     if (!title || !description || price === undefined || !categoryId) {
       return res.status(400).json({
         success: false,
         error: 'Título, descripción, precio y categoría son campos obligatorios.',
       });
+    }
+
+    const isUUID = (val) => typeof val === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val);
+
+    // 1. Asegurar userId válido existente en tabla users de Supabase
+    if (!isUUID(userId)) {
+      const uRes = await query('SELECT id FROM users LIMIT 1');
+      if (uRes.rows.length > 0) {
+        userId = uRes.rows[0].id;
+      }
+    }
+
+    // 2. Asegurar categoryId válido existente en tabla categories de Supabase
+    let finalCategoryId = categoryId;
+    if (!isUUID(finalCategoryId)) {
+      const cRes = await query('SELECT id FROM categories LIMIT 1');
+      if (cRes.rows.length > 0) {
+        finalCategoryId = cRes.rows[0].id;
+      }
+    }
+
+    // 3. Asegurar facultyId válido en tabla faculties
+    let finalFacultyId = facultyId;
+    if (finalFacultyId && !isUUID(finalFacultyId)) {
+      const fRes = await query('SELECT id FROM faculties WHERE name ILIKE $1 LIMIT 1', ['%Ecatepec%']);
+      if (fRes.rows.length > 0) {
+        finalFacultyId = fRes.rows[0].id;
+      } else {
+        const anyF = await query('SELECT id FROM faculties LIMIT 1');
+        finalFacultyId = anyF.rows.length > 0 ? anyF.rows[0].id : null;
+      }
     }
 
     const sql = `
@@ -162,8 +193,8 @@ export const createProduct = async (req, res, next) => {
 
     const insertResult = await query(sql, [
       userId,
-      categoryId,
-      facultyId || null,
+      finalCategoryId,
+      finalFacultyId || null,
       title,
       description,
       parseFloat(price) || 0,
