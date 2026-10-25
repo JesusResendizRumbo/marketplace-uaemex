@@ -2,12 +2,21 @@ import React, { useState } from 'react';
 import { X, Send, ShieldCheck, MapPin } from 'lucide-react';
 
 export default function ChatModal({ activeChatProduct, user, onClose }) {
+  const isLostItem = activeChatProduct?.isLostItem;
+  const isLost = activeChatProduct?.type === 'lost';
+
+  const defaultGreeting = isLostItem
+    ? isLost
+      ? `¡Hola! Gracias por avisar. ¿Dónde nos vemos en CU Ecatepec para recuperar mi objeto: "${activeChatProduct?.title}"? ¡Muchísimas gracias!`
+      : `¡Hola! Tengo bajo resguardo el objeto hallado: "${activeChatProduct?.title}". ¿En qué edificio o cubículo de CU Ecatepec nos encontramos para entregártelo?`
+    : `¡Hola! Gracias por tu interés en: "${activeChatProduct?.title || 'este artículo'}". ¿En qué horario te gustaría verlo en el campus?`;
+
   const [messages, setMessages] = useState([
     {
       id: 'm1',
       sender: 'seller',
-      senderName: activeChatProduct?.seller_name || 'Vendedor Universitario',
-      text: `¡Hola! Gracias por tu interés en: "${activeChatProduct?.title || 'este artículo'}". ¿En qué horario te gustaría verlo en el campus?`,
+      senderName: activeChatProduct?.seller_name || (isLostItem ? 'Reportante' : 'Vendedor Universitario'),
+      text: defaultGreeting,
       time: 'Hace un momento',
     }
   ]);
@@ -30,13 +39,17 @@ export default function ChatModal({ activeChatProduct, user, onClose }) {
 
     // Respuesta simulada automática
     setTimeout(() => {
+      const botResponse = isLostItem
+        ? '¡Excelente! Te parece bien vernos en la explanada central o frente a la cafetería de CU Ecatepec para la entrega?'
+        : 'Perfecto, puedo entregártelo mañana en el campus entre clases. ¿Te queda bien en la explanada central?';
+
       setMessages(prev => [
         ...prev,
         {
           id: `m-bot-${Date.now()}`,
           sender: 'seller',
-          senderName: activeChatProduct?.seller_name || 'Vendedor Universitario',
-          text: 'Perfecto, puedo entregártelo mañana en el campus entre clases. ¿Te queda bien en la explanada central?',
+          senderName: activeChatProduct?.seller_name || (isLostItem ? 'Reportante' : 'Vendedor Universitario'),
+          text: botResponse,
           time: 'Ahora',
         }
       ]);
@@ -50,11 +63,11 @@ export default function ChatModal({ activeChatProduct, user, onClose }) {
         <div style={{ background: '#004d26', color: '#ffffff', padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div>
             <h3 style={{ fontSize: '1rem', fontWeight: '700', color: '#e5a823' }}>
-              {activeChatProduct?.seller_name || 'Chat con Vendedor'}
+              {activeChatProduct?.seller_name || (isLostItem ? 'Contacto de Objeto' : 'Chat con Vendedor')}
             </h3>
             <div style={{ fontSize: '0.75rem', color: '#cbd5e1', display: 'flex', alignItems: 'center', gap: '4px' }}>
               <ShieldCheck size={14} color="#e5a823" />
-              <span>{activeChatProduct?.faculty_name || 'Campus Universitario'}</span>
+              <span>{activeChatProduct?.faculty_name || 'CU UAEM Ecatepec'}</span>
             </div>
           </div>
           <button className="modal-close" style={{ color: '#ffffff', position: 'static' }} onClick={onClose}>
@@ -62,14 +75,15 @@ export default function ChatModal({ activeChatProduct, user, onClose }) {
           </button>
         </div>
 
-        {/* Banner de Producto Vinculado */}
+        {/* Banner de Producto o Reporte Vinculado */}
         {activeChatProduct && (
           <div style={{ background: '#f8fafc', padding: '10px 16px', borderBottom: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.8rem' }}>
             <span style={{ fontWeight: '600', color: '#0f172a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '300px' }}>
-              📦 {activeChatProduct.title}
+              {isLostItem ? (isLost ? '🔴 Extraviado: ' : '🟢 Encontrado: ') : '📦 '}
+              {activeChatProduct.title}
             </span>
-            <span style={{ fontWeight: '800', color: '#004d26' }}>
-              ${activeChatProduct.price} MXN
+            <span style={{ fontWeight: '800', color: isLostItem ? '#004d26' : '#004d26', fontSize: '0.78rem' }}>
+              {isLostItem ? (activeChatProduct.location_details || 'CU Ecatepec') : `$${activeChatProduct.price} MXN`}
             </span>
           </div>
         )}

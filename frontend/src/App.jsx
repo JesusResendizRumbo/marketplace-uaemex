@@ -30,7 +30,8 @@ import {
   Search,
   Sparkles,
   ShoppingBag,
-  HeartHandshake
+  HeartHandshake,
+  PlusCircle
 } from 'lucide-react';
 
 const ICON_MAP = {
@@ -45,10 +46,24 @@ const ICON_MAP = {
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('catalog'); // 'catalog' o 'lost-found'
-  const [products, setProducts] = useState(MOCK_PRODUCTS);
+  const [products, setProducts] = useState(() => {
+    try {
+      const saved = localStorage.getItem('potrotrade_products');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
   const [categories, setCategories] = useState(MOCK_CATEGORIES);
   const [faculties, setFaculties] = useState(MOCK_FACULTIES);
-  const [lostItems, setLostItems] = useState(MOCK_LOST_ITEMS);
+  const [lostItems, setLostItems] = useState(() => {
+    try {
+      const saved = localStorage.getItem('potrotrade_lost_items');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
   const [user, setUser] = useState(() => {
     try {
       const saved = localStorage.getItem('uaemex_user');
@@ -69,13 +84,14 @@ export default function App() {
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [isPublishOpen, setIsPublishOpen] = useState(false);
   const [isReportOpen, setIsReportOpen] = useState(false);
+  const [reportModalInitialType, setReportModalInitialType] = useState('lost');
   const [authModalMode, setAuthModalMode] = useState(null); // null, 'login', 'register'
   const [activeChatProduct, setActiveChatProduct] = useState(null);
   const [checkoutProduct, setCheckoutProduct] = useState(null);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [reviewModalData, setReviewModalData] = useState(null);
 
-  // Carga inicial
+  // Carga inicial y sincronización con el servidor
   useEffect(() => {
     async function loadInitialData() {
       try {
@@ -85,10 +101,42 @@ export default function App() {
           api.getFaculties(),
           api.getLostItems(),
         ]);
-        if (prods && Array.isArray(prods) && prods.length > 0) setProducts(prods);
         if (cats && Array.isArray(cats) && cats.length > 0) setCategories(cats);
         if (facs && Array.isArray(facs) && facs.length > 0) setFaculties(facs);
-        if (lost && Array.isArray(lost) && lost.length > 0) setLostItems(lost);
+
+        // Sincronizar productos reales del servidor con publicaciones locales guardadas
+        let localProds = [];
+        try {
+          const saved = localStorage.getItem('potrotrade_products');
+          if (saved) localProds = JSON.parse(saved);
+        } catch {}
+
+        const serverProds = Array.isArray(prods) ? prods : [];
+        const combinedProdsMap = new Map();
+        serverProds.forEach(p => combinedProdsMap.set(p.id, p));
+        localProds.forEach(p => {
+          if (!combinedProdsMap.has(p.id)) combinedProdsMap.set(p.id, p);
+        });
+        const finalProds = Array.from(combinedProdsMap.values());
+        setProducts(finalProds);
+        localStorage.setItem('potrotrade_products', JSON.stringify(finalProds));
+
+        // Sincronizar reportes de objetos perdidos
+        let localLost = [];
+        try {
+          const saved = localStorage.getItem('potrotrade_lost_items');
+          if (saved) localLost = JSON.parse(saved);
+        } catch {}
+
+        const serverLost = Array.isArray(lost) ? lost : [];
+        const combinedLostMap = new Map();
+        serverLost.forEach(i => combinedLostMap.set(i.id, i));
+        localLost.forEach(i => {
+          if (!combinedLostMap.has(i.id)) combinedLostMap.set(i.id, i);
+        });
+        const finalLost = Array.from(combinedLostMap.values());
+        setLostItems(finalLost);
+        localStorage.setItem('potrotrade_lost_items', JSON.stringify(finalLost));
       } catch (err) {
         console.warn('Conectando con backend...', err.message);
       }
@@ -112,7 +160,15 @@ export default function App() {
   });
 
   const handlePublish = (newProduct) => {
-    setProducts([newProduct, ...products]);
+    setProducts(prev => {
+      const updated = [newProduct, ...prev.filter(p => p.id !== newProduct.id)];
+      try {
+        localStorage.setItem('potrotrade_products', JSON.stringify(updated));
+      } catch (err) {
+        console.warn('Error guardando publicación en localStorage:', err);
+      }
+      return updated;
+    });
   };
 
   const handleStartChat = (product) => {
@@ -123,6 +179,47 @@ export default function App() {
   const handleStartCheckout = (product) => {
     setSelectedProduct(null);
     setCheckoutProduct(product);
+  };
+
+  const handleOpenReportModal = (type = 'lost') => {
+    if (!user) {
+      setAuthModalMode('login');
+      return;
+    }
+    setReportModalInitialType(type);
+    setIsReportOpen(true);
+  };
+
+  const handleContactReporter = (item) => {
+    setActiveChatProduct({
+      isLostItem: true,
+      id: item.id,
+      title: item.title,
+      type: item.type,
+      seller_name: item.reporter_name || 'Compañero Universitario',
+      seller_email: item.reporter_email,
+      faculty_name: item.faculty_name || 'CU UAEM Ecatepec',
+      location_details: item.location_details,
+      event_date: item.event_date
+    });
+  };
+
+  const handleResolveLostItem = async (itemId) => {
+    const token = localStorage.getItem('uaemex_token') || user?.token;
+    try {
+      if (token) {
+        await api.resolveLostItem(itemId, token);
+      }
+    } catch (err) {
+      console.warn('Error resolviendo objeto en backend:', err.message);
+    }
+    setLostItems(prev => {
+      const updated = prev.map(item => item.id === itemId ? { ...item, status: 'resolved' } : item);
+      try {
+        localStorage.setItem('potrotrade_lost_items', JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
   };
 
   return (
@@ -269,7 +366,26 @@ export default function App() {
 
             {/* Grid de Productos */}
             <section>
-              {filteredProducts.length === 0 ? (
+              {products.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '60px 20px', background: '#ffffff', borderRadius: '16px', border: '1px solid #e2e8f0', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
+                  <ShoppingBag size={52} style={{ color: '#004d26', margin: '0 auto 16px auto', opacity: 0.85 }} />
+                  <h3 style={{ fontSize: '1.25rem', fontWeight: '800', color: '#0f172a' }}>Aún no hay publicaciones en el catálogo</h3>
+                  <p style={{ fontSize: '0.88rem', color: '#64748b', marginTop: '8px', maxWidth: '440px', margin: '8px auto 20px auto', lineHeight: '1.5' }}>
+                    Sé el primero de tu carrera en poner a la venta un libro, calculadora, bata o material universitario para la comunidad de CU Ecatepec.
+                  </p>
+                  <button 
+                    className="btn btn-primary"
+                    style={{ padding: '10px 22px', fontSize: '0.9rem', display: 'inline-flex', alignItems: 'center', gap: '8px', margin: '0 auto' }}
+                    onClick={() => {
+                      if (!user) setAuthModalMode('login');
+                      else setIsPublishOpen(true);
+                    }}
+                  >
+                    <PlusCircle size={18} />
+                    <span>Publicar el Primer Artículo</span>
+                  </button>
+                </div>
+              ) : filteredProducts.length === 0 ? (
                 <div style={{ textAlign: 'center', padding: '60px 20px', background: '#ffffff', borderRadius: '16px', border: '1px solid #e2e8f0' }}>
                   <Search size={40} style={{ color: '#94a3b8', margin: '0 auto 12px auto' }} />
                   <h3 style={{ fontSize: '1.2rem', fontWeight: '700', color: '#0f172a' }}>No encontramos artículos con esos filtros</h3>
@@ -294,13 +410,10 @@ export default function App() {
         {activeTab === 'lost-found' && (
           <LostFoundSection 
             lostItems={lostItems}
-            onOpenReportModal={() => {
-              if (!user) {
-                setAuthModalMode('login');
-              } else {
-                setIsReportOpen(true);
-              }
-            }}
+            user={user}
+            onOpenReportModal={handleOpenReportModal}
+            onContactReporter={handleContactReporter}
+            onResolveItem={handleResolveLostItem}
           />
         )}
       </main>
@@ -408,11 +521,20 @@ export default function App() {
 
       {isReportOpen && (
         <ReportModal 
+          initialType={reportModalInitialType}
           faculties={faculties}
           user={user}
           onClose={() => setIsReportOpen(false)}
           onReportCreated={(newReport) => {
-            setLostItems(prev => [newReport, ...prev]);
+            setLostItems(prev => {
+              const updated = [newReport, ...prev.filter(i => i.id !== newReport.id)];
+              try {
+                localStorage.setItem('potrotrade_lost_items', JSON.stringify(updated));
+              } catch (err) {
+                console.warn('Error guardando reporte en localStorage:', err);
+              }
+              return updated;
+            });
           }}
         />
       )}

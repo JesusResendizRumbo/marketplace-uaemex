@@ -130,10 +130,10 @@ export const api = {
       const query = new URLSearchParams(params).toString();
       const res = await fetch(`${API_BASE_URL}/products?${query}`);
       const json = await res.json();
-      if (json.success && json.data.length > 0) return json.data;
-      return MOCK_PRODUCTS;
+      if (json.success && Array.isArray(json.data)) return json.data;
+      return [];
     } catch {
-      return MOCK_PRODUCTS;
+      return [];
     }
   },
 
@@ -182,10 +182,10 @@ export const api = {
     try {
       const res = await fetch(`${API_BASE_URL}/lost-items`);
       const json = await res.json();
-      if (json.success && json.data.length > 0) return json.data;
-      return MOCK_LOST_ITEMS;
+      if (json.success && Array.isArray(json.data)) return json.data;
+      return [];
     } catch {
-      return MOCK_LOST_ITEMS;
+      return [];
     }
   },
 
@@ -204,6 +204,24 @@ export const api = {
       return json;
     } catch (err) {
       console.warn('Error al conectar con backend para reportar objeto:', err);
+      return null;
+    }
+  },
+
+  async resolveLostItem(itemId, token) {
+    try {
+      const authToken = token || (typeof window !== 'undefined' ? localStorage.getItem('uaemex_token') : null);
+      const res = await fetch(`${API_BASE_URL}/lost-items/${itemId}/resolve`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(authToken ? { 'Authorization': `Bearer ${authToken}` } : {})
+        },
+      });
+      const json = await res.json();
+      return json;
+    } catch (err) {
+      console.warn('Error resolviendo reporte de objeto:', err);
       return null;
     }
   }

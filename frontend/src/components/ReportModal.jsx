@@ -1,21 +1,95 @@
-import React, { useState } from 'react';
-import { X, Search, MapPin, Calendar, AlertCircle, CheckCircle2, ShieldCheck, Tag } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { X, Search, MapPin, Calendar, AlertCircle, CheckCircle2, ShieldCheck, Tag, Camera, Trash2 } from 'lucide-react';
 import { MOCK_FACULTIES } from '../data/mockData.js';
 import { api } from '../services/api.js';
 
-export default function ReportModal({ faculties, user, onClose, onReportCreated }) {
+export default function ReportModal({ faculties, user, initialType = 'lost', onClose, onReportCreated }) {
   const safeFaculties = (faculties && faculties.length > 0) ? faculties : MOCK_FACULTIES;
+  const fileInputRef = useRef(null);
 
-  const [type, setType] = useState('found'); // 'found' o 'lost'
+  const [type, setType] = useState(initialType || 'lost'); // 'lost' o 'found'
   const [formData, setFormData] = useState({
     title: '',
     facultyId: safeFaculties[0]?.id || 'eca-1',
     locationDetails: '',
     eventDate: new Date().toISOString().split('T')[0],
     description: '',
+    imageUrl: '',
   });
 
+  const [imagePreview, setImagePreview] = useState('');
+  const [isProcessingImage, setIsProcessingImage] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+
+  // Compresión automática en canvas
+  const compressImageFile = (file) => {
+    return new Promise((resolve, reject) => {
+      if (!file) return resolve(null);
+      if (!file.type.startsWith('image/')) {
+        alert('Por favor selecciona un archivo de imagen (JPG, PNG, WebP).');
+        return resolve(null);
+      }
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          const maxDim = 900;
+          let width = img.width;
+          let height = img.height;
+
+          if (width > height) {
+            if (width > maxDim) {
+              height = Math.round((height * maxDim) / width);
+              width = maxDim;
+            }
+          } else {
+            if (height > maxDim) {
+              width = Math.round((width * maxDim) / height);
+              height = maxDim;
+            }
+          }
+
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+
+          const compressedBase64 = canvas.toDataURL('image/jpeg', 0.78);
+          resolve(compressedBase64);
+        };
+        img.onerror = () => reject(new Error('No se pudo procesar la imagen'));
+        img.src = e.target.result;
+      };
+      reader.onerror = () => reject(new Error('Error leyendo archivo'));
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const handleFileChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setIsProcessingImage(true);
+      const base64 = await compressImageFile(file);
+      if (base64) {
+        setImagePreview(base64);
+        setFormData(prev => ({ ...prev, imageUrl: base64 }));
+      }
+    } catch (err) {
+      console.error('Error procesando imagen:', err);
+    } finally {
+      setIsProcessingImage(false);
+    }
+  };
+
+  const handleRemoveImage = () => {
+    setImagePreview('');
+    setFormData(prev => ({ ...prev, imageUrl: '' }));
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -32,7 +106,7 @@ export default function ReportModal({ faculties, user, onClose, onReportCreated 
       eventDate: formData.eventDate,
       type,
       facultyId: selectedFaculty.id,
-      images: [],
+      images: formData.imageUrl ? [formData.imageUrl] : [],
     };
 
     setSubmitting(true);
@@ -151,48 +225,62 @@ export default function ReportModal({ faculties, user, onClose, onReportCreated 
         <form onSubmit={handleSubmit}>
           {/* Selector de Tipo */}
           <div className="form-group">
-            <label className="form-label">Tipo de Reporte *</label>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-              <button
-                type="button"
-                onClick={() => setType('found')}
-                style={{
-                  padding: '10px',
-                  borderRadius: '10px',
-                  border: type === 'found' ? '2px solid #004d26' : '1px solid #e2e8f0',
-                  background: type === 'found' ? 'rgba(0, 77, 38, 0.08)' : '#ffffff',
-                  color: type === 'found' ? '#004d26' : '#64748b',
-                  fontWeight: '700',
-                  fontSize: '0.85rem',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '6px',
-                  cursor: 'pointer'
-                }}
-              >
-                <CheckCircle2 size={16} /> Objeto Encontrado
-              </button>
+            <label className="form-label" style={{ fontWeight: '700' }}>Tipo de Reporte *</label>
+            <select
+              className="filter-select"
+              value={type}
+              onChange={(e) => setType(e.target.value)}
+              style={{ marginBottom: '10px', fontWeight: '700', padding: '10px 12px' }}
+            >
+              <option value="lost">🔴 Objeto Extraviado / Perdido (Pido apoyo para recuperarlo)</option>
+              <option value="found">🟢 Objeto Encontrado (Lo encontré en campus y busco a su dueño)</option>
+            </select>
 
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
               <button
                 type="button"
                 onClick={() => setType('lost')}
                 style={{
-                  padding: '10px',
+                  padding: '12px 10px',
                   borderRadius: '10px',
-                  border: type === 'lost' ? '2px solid #dc2626' : '1px solid #e2e8f0',
-                  background: type === 'lost' ? 'rgba(220, 38, 38, 0.08)' : '#ffffff',
-                  color: type === 'lost' ? '#dc2626' : '#64748b',
+                  border: type === 'lost' ? '2px solid #dc2626' : '1px solid #cbd5e1',
+                  background: type === 'lost' ? '#fef2f2' : '#ffffff',
+                  color: type === 'lost' ? '#b91c1c' : '#64748b',
                   fontWeight: '700',
                   fontSize: '0.85rem',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  gap: '6px',
-                  cursor: 'pointer'
+                  gap: '8px',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease'
                 }}
               >
-                <AlertCircle size={16} /> Objeto Extraviado
+                <AlertCircle size={18} color={type === 'lost' ? '#b91c1c' : '#94a3b8'} />
+                <span>Objeto Extraviado</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setType('found')}
+                style={{
+                  padding: '12px 10px',
+                  borderRadius: '10px',
+                  border: type === 'found' ? '2px solid #004d26' : '1px solid #cbd5e1',
+                  background: type === 'found' ? '#f0fdf4' : '#ffffff',
+                  color: type === 'found' ? '#166534' : '#64748b',
+                  fontWeight: '700',
+                  fontSize: '0.85rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease'
+                }}
+              >
+                <CheckCircle2 size={18} color={type === 'found' ? '#166534' : '#94a3b8'} />
+                <span>Objeto Encontrado</span>
               </button>
             </div>
           </div>
@@ -203,7 +291,7 @@ export default function ReportModal({ faculties, user, onClose, onReportCreated 
             <input 
               type="text" 
               className="form-input" 
-              placeholder="ej. Credencial UAEMex de Derecho o Calculadora Casio fx-991" 
+              placeholder={type === 'lost' ? "ej. Credencial UAEMex de Derecho o Calculadora Casio fx-991" : "ej. Bata de laboratorio blanca o Mochila negra con llavero"} 
               required
               value={formData.title}
               onChange={(e) => setFormData({ ...formData, title: e.target.value })}
@@ -256,12 +344,80 @@ export default function ReportModal({ faculties, user, onClose, onReportCreated 
             <label className="form-label">Descripción Detallada y Puntos de Contacto *</label>
             <textarea 
               className="form-textarea" 
-              rows="3" 
-              placeholder="Describe color, marcas particulares, o si se dejó con vigilancia/biblioteca para reclamarlo."
               required
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
             ></textarea>
+          </div>
+
+          {/* Foto opcional del objeto */}
+          <div className="form-group">
+            <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span>Foto del Objeto (Opcional)</span>
+              {imagePreview && (
+                <span style={{ fontSize: '0.75rem', color: '#16a34a', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: '700' }}>
+                  <CheckCircle2 size={13} /> Foto adjunta ✓
+                </span>
+              )}
+            </label>
+
+            <input 
+              type="file" 
+              ref={fileInputRef} 
+              accept="image/*" 
+              style={{ display: 'none' }} 
+              onChange={handleFileChange}
+            />
+
+            {!imagePreview ? (
+              <div 
+                onClick={() => fileInputRef.current?.click()}
+                style={{
+                  border: '1.5px dashed #cbd5e1',
+                  borderRadius: '10px',
+                  padding: '16px',
+                  textAlign: 'center',
+                  background: '#f8fafc',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '10px'
+                }}
+              >
+                <Camera size={20} style={{ color: '#004d26' }} />
+                <span style={{ fontSize: '0.84rem', color: '#334155', fontWeight: '600' }}>
+                  {isProcessingImage ? 'Procesando foto...' : '📷 Tomar foto con el celular o adjuntar imagen'}
+                </span>
+              </div>
+            ) : (
+              <div style={{
+                border: '1px solid #86efac',
+                borderRadius: '10px',
+                padding: '10px',
+                background: '#f0fdf4',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px'
+              }}>
+                <img 
+                  src={imagePreview} 
+                  alt="Foto objeto" 
+                  style={{ width: '56px', height: '56px', objectFit: 'cover', borderRadius: '6px' }} 
+                />
+                <div style={{ flex: 1, fontSize: '0.8rem', color: '#166534', fontWeight: '600' }}>
+                  Foto lista para el reporte
+                </div>
+                <button 
+                  type="button" 
+                  className="btn" 
+                  style={{ fontSize: '0.75rem', padding: '4px 8px', color: '#dc2626', background: '#fee2e2', border: 'none' }}
+                  onClick={handleRemoveImage}
+                >
+                  <Trash2 size={13} />
+                </button>
+              </div>
+            )}
           </div>
 
           <button 
@@ -270,7 +426,13 @@ export default function ReportModal({ faculties, user, onClose, onReportCreated 
             style={{ width: '100%', padding: '12px' }}
             disabled={submitting}
           >
-            <span>{submitting ? 'Registrando Reporte...' : 'Publicar Reporte en el Tablón de CU Ecatepec'}</span>
+            <span>
+              {submitting 
+                ? 'Registrando Reporte...' 
+                : type === 'lost' 
+                ? 'Publicar Búsqueda de Objeto Extraviado' 
+                : 'Publicar Objeto Encontrado para Devolver'}
+            </span>
           </button>
         </form>
       </div>

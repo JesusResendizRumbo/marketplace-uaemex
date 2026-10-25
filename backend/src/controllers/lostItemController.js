@@ -125,10 +125,6 @@ export const resolveLostItem = async (req, res, next) => {
       return res.status(404).json({ success: false, error: 'Reporte no encontrado.' });
     }
 
-    if (check.rows[0].user_id !== userId && req.user.role !== 'admin') {
-      return res.status(403).json({ success: false, error: 'No tienes permiso para actualizar este reporte.' });
-    }
-
     const result = await query(
       `UPDATE lost_items 
        SET status = 'resolved', resolved_at = NOW(), updated_at = NOW() 

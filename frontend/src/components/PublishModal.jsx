@@ -1,11 +1,12 @@
-import React, { useState } from 'react';
-import { X, Upload, DollarSign, Tag, MapPin, Sparkles, User, ShieldCheck } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { X, Upload, DollarSign, Tag, MapPin, Sparkles, User, ShieldCheck, Camera, Trash2, CheckCircle2 } from 'lucide-react';
 import { MOCK_CATEGORIES, MOCK_FACULTIES } from '../data/mockData.js';
 import { api } from '../services/api.js';
 
 export default function PublishModal({ categories, faculties, user, onClose, onPublish }) {
   const safeCategories = (categories && categories.length > 0) ? categories : MOCK_CATEGORIES;
   const safeFaculties = (faculties && faculties.length > 0) ? faculties : MOCK_FACULTIES;
+  const fileInputRef = useRef(null);
 
   const [formData, setFormData] = useState({
     title: '',
@@ -18,7 +19,81 @@ export default function PublishModal({ categories, faculties, user, onClose, onP
     imageUrl: '',
   });
 
+  const [imagePreview, setImagePreview] = useState('');
+  const [isProcessingImage, setIsProcessingImage] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+
+  // Función para comprimir y convertir a Base64 cualquier foto subida desde móvil o PC
+  const compressImageFile = (file) => {
+    return new Promise((resolve, reject) => {
+      if (!file) return resolve(null);
+      if (!file.type.startsWith('image/')) {
+        alert('Por favor selecciona un archivo de imagen válido (JPG, PNG, WebP).');
+        return resolve(null);
+      }
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          const maxDim = 900;
+          let width = img.width;
+          let height = img.height;
+
+          if (width > height) {
+            if (width > maxDim) {
+              height = Math.round((height * maxDim) / width);
+              width = maxDim;
+            }
+          } else {
+            if (height > maxDim) {
+              width = Math.round((width * maxDim) / height);
+              height = maxDim;
+            }
+          }
+
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+
+          // Calidad 0.78 JPEG produce imágenes de alta nitidez con un peso de solo ~60KB - ~100KB
+          const compressedBase64 = canvas.toDataURL('image/jpeg', 0.78);
+          resolve(compressedBase64);
+        };
+        img.onerror = () => reject(new Error('No se pudo procesar la imagen'));
+        img.src = e.target.result;
+      };
+      reader.onerror = () => reject(new Error('Error leyendo archivo'));
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const handleFileChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setIsProcessingImage(true);
+      const base64 = await compressImageFile(file);
+      if (base64) {
+        setImagePreview(base64);
+        setFormData(prev => ({ ...prev, imageUrl: base64 }));
+      }
+    } catch (err) {
+      console.error('Error procesando imagen:', err);
+      alert('Hubo un problema al procesar la imagen seleccionada.');
+    } finally {
+      setIsProcessingImage(false);
+    }
+  };
+
+  const handleRemoveImage = () => {
+    setImagePreview('');
+    setFormData(prev => ({ ...prev, imageUrl: '' }));
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -244,14 +319,96 @@ export default function PublishModal({ categories, faculties, user, onClose, onP
           </div>
 
           <div className="form-group">
-            <label className="form-label">URL de Imagen del Producto</label>
+            <label className="form-label" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span>Foto del Artículo</span>
+              {imagePreview && (
+                <span style={{ fontSize: '0.75rem', color: '#16a34a', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: '700' }}>
+                  <CheckCircle2 size={13} /> Foto cargada y optimizada
+                </span>
+              )}
+            </label>
+
+            {/* Input nativo oculto para abrir selector de fotos o cámara del móvil */}
             <input 
-              type="url" 
-              className="form-input" 
-              placeholder="https://images.unsplash.com/... (Opcional, se usará imagen por defecto)"
-              value={formData.imageUrl}
-              onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
+              type="file" 
+              ref={fileInputRef} 
+              accept="image/*" 
+              style={{ display: 'none' }} 
+              onChange={handleFileChange}
             />
+
+            {!imagePreview ? (
+              <div 
+                onClick={() => fileInputRef.current?.click()}
+                style={{
+                  border: '2px dashed #004d26',
+                  borderRadius: '12px',
+                  padding: '24px 16px',
+                  textAlign: 'center',
+                  background: '#f8fafc',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: '10px'
+                }}
+              >
+                <div style={{ background: 'rgba(0, 77, 38, 0.08)', padding: '12px', borderRadius: '50%', color: '#004d26' }}>
+                  <Camera size={26} />
+                </div>
+                <div>
+                  <div style={{ fontSize: '0.92rem', fontWeight: '700', color: '#004d26' }}>
+                    {isProcessingImage ? 'Optimizando foto...' : '📷 Subir foto desde tu equipo o cámara'}
+                  </div>
+                  <p style={{ fontSize: '0.78rem', color: '#64748b', marginTop: '3px' }}>
+                    Toca aquí para seleccionar una imagen de tu celular o computadora (JPG, PNG, WebP)
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div style={{
+                border: '1.5px solid #86efac',
+                borderRadius: '12px',
+                padding: '12px',
+                background: '#f0fdf4',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '14px'
+              }}>
+                <img 
+                  src={imagePreview} 
+                  alt="Vista previa" 
+                  style={{ width: '70px', height: '70px', objectFit: 'cover', borderRadius: '8px', border: '1px solid #cbd5e1' }}
+                />
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: '0.85rem', fontWeight: '700', color: '#166534' }}>
+                    Foto lista para publicar ✓
+                  </div>
+                  <div style={{ fontSize: '0.75rem', color: '#475569', marginTop: '2px' }}>
+                    Se ha procesado y optimizado automáticamente para verse nítida en el catálogo.
+                  </div>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <button 
+                    type="button" 
+                    className="btn btn-secondary" 
+                    style={{ fontSize: '0.75rem', padding: '5px 10px' }}
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    Cambiar
+                  </button>
+                  <button 
+                    type="button" 
+                    className="btn" 
+                    style={{ fontSize: '0.75rem', padding: '5px 10px', color: '#dc2626', background: '#fee2e2', border: 'none' }}
+                    onClick={handleRemoveImage}
+                  >
+                    <Trash2 size={13} />
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="form-group">
