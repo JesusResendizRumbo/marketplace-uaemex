@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, MapPin, Star, MessageSquare, ShieldCheck, Tag, Calendar, CreditCard } from 'lucide-react';
+import { X, MapPin, Star, MessageSquare, ShieldCheck, Tag, Calendar, CreditCard, Edit3, Trash2 } from 'lucide-react';
 
 const CONDITION_LABELS = {
   new: 'Nuevo (Sellado)',
@@ -8,7 +8,7 @@ const CONDITION_LABELS = {
   acceptable: 'Con detalles estéticos',
 };
 
-export default function ProductModal({ product, user, onClose, onStartChat, onStartCheckout }) {
+export default function ProductModal({ product, user, onClose, onStartChat, onStartCheckout, onEditProduct, onDeleteProduct }) {
   if (!product) return null;
 
   const isOwnProduct = Boolean(
@@ -111,25 +111,77 @@ export default function ProductModal({ product, user, onClose, onStartChat, onSt
               </div>
             </div>
 
-            {/* Acciones de Compra y Contacto */}
+            {/* Acciones de Compra y Contacto o Edición para el Dueño */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: 'auto' }}>
-              <button 
-                className="btn btn-primary" 
-                style={{ width: '100%', padding: '12px', fontSize: '0.95rem' }}
-                onClick={() => onStartCheckout(product)}
-              >
-                <CreditCard size={18} />
-                <span>Pagar con Tarjeta (Pago Protegido)</span>
-              </button>
+              {isOwnProduct ? (
+                <>
+                  <div style={{ 
+                    background: '#f0fdf4', 
+                    border: '1.5px solid #86efac', 
+                    borderRadius: '10px', 
+                    padding: '10px 14px', 
+                    fontSize: '0.82rem', 
+                    color: '#166534',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px'
+                  }}>
+                    <ShieldCheck size={18} style={{ flexShrink: 0, color: '#004d26' }} />
+                    <span>Eres el autor de esta publicación. Puedes modificarla o retirarla del catálogo.</span>
+                  </div>
 
-              <button 
-                className="btn btn-secondary" 
-                style={{ width: '100%', padding: '10px' }}
-                onClick={() => onStartChat(product)}
-              >
-                <MessageSquare size={16} />
-                <span>Contactar / Acordar Entrega en CU Ecatepec</span>
-              </button>
+                  <button 
+                    className="btn btn-primary" 
+                    style={{ width: '100%', padding: '12px', fontSize: '0.95rem', gap: '8px' }}
+                    onClick={() => onEditProduct(product)}
+                  >
+                    <Edit3 size={18} />
+                    <span>Editar Información o Foto</span>
+                  </button>
+
+                  <button 
+                    className="btn" 
+                    style={{ 
+                      background: '#fef2f2', 
+                      color: '#dc2626', 
+                      border: '1.5px solid #fecaca', 
+                      width: '100%', 
+                      padding: '11px', 
+                      fontSize: '0.9rem', 
+                      fontWeight: '700',
+                      gap: '8px' 
+                    }}
+                    onClick={() => {
+                      if (window.confirm(`¿Deseas eliminar definitivamente "${product.title}" del catálogo de CU Ecatepec?`)) {
+                        onDeleteProduct(product.id);
+                      }
+                    }}
+                  >
+                    <Trash2 size={17} />
+                    <span>Eliminar Publicación</span>
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button 
+                    className="btn btn-primary" 
+                    style={{ width: '100%', padding: '12px', fontSize: '0.95rem' }}
+                    onClick={() => onStartCheckout(product)}
+                  >
+                    <CreditCard size={18} />
+                    <span>Pagar con Tarjeta (Pago Protegido)</span>
+                  </button>
+
+                  <button 
+                    className="btn btn-secondary" 
+                    style={{ width: '100%', padding: '10px' }}
+                    onClick={() => onStartChat(product)}
+                  >
+                    <MessageSquare size={16} />
+                    <span>Contactar / Acordar Entrega en CU Ecatepec</span>
+                  </button>
+                </>
+              )}
             </div>
           </div>
         </div>

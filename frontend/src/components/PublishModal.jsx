@@ -3,23 +3,25 @@ import { X, Upload, DollarSign, Tag, MapPin, Sparkles, User, ShieldCheck, Camera
 import { MOCK_CATEGORIES, MOCK_FACULTIES } from '../data/mockData.js';
 import { api } from '../services/api.js';
 
-export default function PublishModal({ categories, faculties, user, onClose, onPublish }) {
+export default function PublishModal({ categories, faculties, user, onClose, onPublish, editingProduct = null }) {
   const safeCategories = (categories && categories.length > 0) ? categories : MOCK_CATEGORIES;
   const safeFaculties = (faculties && faculties.length > 0) ? faculties : MOCK_FACULTIES;
   const fileInputRef = useRef(null);
 
+  const isEditing = Boolean(editingProduct);
+
   const [formData, setFormData] = useState({
-    title: '',
-    description: '',
-    price: '',
-    categoryId: safeCategories[0]?.id || 'cat-1',
-    facultyId: safeFaculties[0]?.id || 'eca-1',
-    condition: 'good',
-    isExchangeable: false,
-    imageUrl: '',
+    title: editingProduct?.title || '',
+    description: editingProduct?.description || '',
+    price: editingProduct?.price !== undefined ? String(editingProduct?.price) : '',
+    categoryId: editingProduct?.category_id || safeCategories.find(c => c.name === editingProduct?.category_name)?.id || safeCategories[0]?.id || 'cat-1',
+    facultyId: editingProduct?.faculty_id || safeFaculties.find(f => f.name === editingProduct?.faculty_name)?.id || safeFaculties[0]?.id || 'eca-1',
+    condition: editingProduct?.condition || 'good',
+    isExchangeable: Boolean(editingProduct?.is_exchangeable),
+    imageUrl: (editingProduct?.images && editingProduct?.images[0]) || '',
   });
 
-  const [imagePreview, setImagePreview] = useState('');
+  const [imagePreview, setImagePreview] = useState((editingProduct?.images && editingProduct?.images[0]) || '');
   const [isProcessingImage, setIsProcessingImage] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
@@ -127,6 +129,39 @@ export default function PublishModal({ categories, faculties, user, onClose, onP
       images: formData.imageUrl ? [formData.imageUrl] : ['https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=800&q=80'],
     };
 
+    if (isEditing) {
+      setSubmitting(true);
+      let updatedProduct = null;
+      try {
+        const res = await api.updateProduct(editingProduct.id, payload);
+        if (res && res.success && res.data) {
+          updatedProduct = { ...editingProduct, ...res.data };
+        }
+      } catch (err) {
+        console.warn('Conexión con Supabase no disponible para actualizar:', err);
+      }
+      setSubmitting(false);
+
+      if (!updatedProduct) {
+        updatedProduct = {
+          ...editingProduct,
+          ...payload,
+          category_id: selectedCategory.id,
+          category_name: selectedCategory.name,
+          faculty_name: selectedFaculty.name,
+          campus_zone: selectedFaculty.campus_zone || 'CU Ecatepec',
+          updated_at: new Date().toISOString(),
+        };
+      } else {
+        updatedProduct.category_name = selectedCategory.name;
+        updatedProduct.faculty_name = selectedFaculty.name;
+      }
+
+      onPublish(updatedProduct, true);
+      onClose();
+      return;
+    }
+
     setSubmitting(true);
     let createdProduct = null;
 
@@ -192,8 +227,12 @@ export default function PublishModal({ categories, faculties, user, onClose, onP
             <Sparkles size={20} />
           </div>
           <div>
-            <h2 style={{ fontSize: '1.25rem', fontWeight: '800', color: '#0f172a' }}>Publicar un Artículo</h2>
-            <p style={{ fontSize: '0.8rem', color: '#64748b' }}>Ofrece tu material académico en el plantel CU Ecatepec</p>
+            <h2 style={{ fontSize: '1.25rem', fontWeight: '800', color: '#0f172a' }}>
+              {isEditing ? '✏️ Editar Publicación' : 'Publicar un Artículo'}
+            </h2>
+            <p style={{ fontSize: '0.8rem', color: '#64748b' }}>
+              {isEditing ? 'Actualiza los datos, precio o foto de tu material en CU Ecatepec' : 'Ofrece tu material académico en el plantel CU Ecatepec'}
+            </p>
           </div>
         </div>
 
@@ -439,7 +478,11 @@ export default function PublishModal({ categories, faculties, user, onClose, onP
           </div>
 
           <button type="submit" className="btn btn-primary" style={{ width: '100%', padding: '12px' }} disabled={submitting}>
-            <span>{submitting ? 'Publicando en Catálogo...' : 'Publicar en el Catálogo de CU Ecatepec'}</span>
+            <span>
+              {submitting 
+                ? (isEditing ? 'Guardando Cambios...' : 'Publicando en Catálogo...') 
+                : (isEditing ? 'Guardar Cambios' : 'Publicar en el Catálogo de CU Ecatepec')}
+            </span>
           </button>
         </form>
       </div>

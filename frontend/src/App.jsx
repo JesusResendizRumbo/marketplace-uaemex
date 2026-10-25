@@ -91,6 +91,7 @@ export default function App() {
   // Modales
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [isPublishOpen, setIsPublishOpen] = useState(false);
+  const [editingProduct, setEditingProduct] = useState(null);
   const [isReportOpen, setIsReportOpen] = useState(false);
   const [reportModalInitialType, setReportModalInitialType] = useState('lost');
   const [authModalMode, setAuthModalMode] = useState(null); // null, 'login', 'register'
@@ -177,9 +178,14 @@ export default function App() {
     return true;
   });
 
-  const handlePublish = (newProduct) => {
+  const handlePublish = (product, isEdit = false) => {
     setProducts(prev => {
-      const updated = [newProduct, ...prev.filter(p => p.id !== newProduct.id)];
+      let updated;
+      if (isEdit) {
+        updated = prev.map(p => p.id === product.id ? product : p);
+      } else {
+        updated = [product, ...prev.filter(p => p.id !== product.id)];
+      }
       try {
         localStorage.setItem('potrotrade_products', JSON.stringify(updated));
       } catch (err) {
@@ -187,6 +193,31 @@ export default function App() {
       }
       return updated;
     });
+    setEditingProduct(null);
+  };
+
+  const handleEditProduct = (product) => {
+    setSelectedProduct(null);
+    setEditingProduct(product);
+    setIsPublishOpen(true);
+  };
+
+  const handleDeleteProduct = async (productId) => {
+    try {
+      await api.deleteProduct(productId);
+    } catch (err) {
+      console.warn('Error eliminando publicación en Supabase:', err);
+    }
+    setProducts(prev => {
+      const updated = prev.filter(p => p.id !== productId);
+      try {
+        localStorage.setItem('potrotrade_products', JSON.stringify(updated));
+      } catch (err) {
+        console.warn('Error actualizando localStorage tras borrar:', err);
+      }
+      return updated;
+    });
+    setSelectedProduct(null);
   };
 
   const handleStartChat = (product) => {
@@ -457,6 +488,8 @@ export default function App() {
           onClose={() => setSelectedProduct(null)} 
           onStartChat={handleStartChat}
           onStartCheckout={handleStartCheckout}
+          onEditProduct={handleEditProduct}
+          onDeleteProduct={handleDeleteProduct}
         />
       )}
 
@@ -476,7 +509,11 @@ export default function App() {
           categories={categories}
           faculties={faculties}
           user={user}
-          onClose={() => setIsPublishOpen(false)}
+          editingProduct={editingProduct}
+          onClose={() => {
+            setIsPublishOpen(false);
+            setEditingProduct(null);
+          }}
           onPublish={handlePublish}
         />
       )}

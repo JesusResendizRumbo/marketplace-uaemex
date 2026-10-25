@@ -168,6 +168,37 @@ export const api = {
     }
   },
 
+  async updateProduct(productId, productData) {
+    try {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/products?id=eq.${productId}`, {
+        method: 'PATCH',
+        headers: supabaseHeaders,
+        body: JSON.stringify(productData),
+      });
+      if (res.ok) {
+        const json = await res.json().catch(() => null);
+        return { success: true, data: Array.isArray(json) ? json[0] : json };
+      }
+      return null;
+    } catch (err) {
+      console.warn('Error al actualizar publicación en Supabase:', err);
+      return null;
+    }
+  },
+
+  async deleteProduct(productId) {
+    try {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/products?id=eq.${productId}`, {
+        method: 'DELETE',
+        headers: supabaseHeaders,
+      });
+      return res.ok;
+    } catch (err) {
+      console.warn('Error al eliminar publicación en Supabase:', err);
+      return false;
+    }
+  },
+
   async getCategories() {
     try {
       const res = await fetch(`${SUPABASE_URL}/rest/v1/categories?select=*`, {
