@@ -27,7 +27,6 @@ export const MOCK_FACULTIES = [
   { id: 'eca-4', name: 'Licenciatura en Psicología', campus_zone: 'CU Ecatepec' },
   { id: 'eca-5', name: 'Licenciatura en Administración', campus_zone: 'CU Ecatepec' },
   { id: 'eca-6', name: 'Licenciatura en Contaduría', campus_zone: 'CU Ecatepec' },
-  { id: 'eca-7', name: 'Tronco Común y Posgrados', campus_zone: 'CU Ecatepec' },
 ];
 
 export const MOCK_CATEGORIES = [

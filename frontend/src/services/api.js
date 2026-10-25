@@ -185,12 +185,13 @@ export const api = {
 
   async getFaculties() {
     try {
-      const res = await fetch(`${SUPABASE_URL}/rest/v1/faculties?select=*`, {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/faculties?campus_zone=eq.CU%20Ecatepec&select=*`, {
         headers: supabaseHeaders
       });
       if (res.ok) {
         const data = await res.json();
-        if (Array.isArray(data) && data.length > 0) return data;
+        const ecatepecFaculties = Array.isArray(data) ? data.filter(f => f.name !== 'Tronco Común y Posgrados') : [];
+        if (ecatepecFaculties.length > 0) return ecatepecFaculties;
       }
       return MOCK_FACULTIES;
     } catch {
