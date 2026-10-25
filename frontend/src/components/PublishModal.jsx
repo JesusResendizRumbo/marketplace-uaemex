@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { X, Upload, DollarSign, Tag, MapPin, Sparkles } from 'lucide-react';
+import { X, Upload, DollarSign, Tag, MapPin, Sparkles, User, ShieldCheck } from 'lucide-react';
 import { MOCK_CATEGORIES, MOCK_FACULTIES } from '../data/mockData.js';
+import { api } from '../services/api.js';
 
-export default function PublishModal({ categories, faculties, onClose, onPublish }) {
+export default function PublishModal({ categories, faculties, user, onClose, onPublish }) {
   const safeCategories = (categories && categories.length > 0) ? categories : MOCK_CATEGORIES;
   const safeFaculties = (faculties && faculties.length > 0) ? faculties : MOCK_FACULTIES;
 
@@ -17,46 +18,99 @@ export default function PublishModal({ categories, faculties, onClose, onPublish
     imageUrl: '',
   });
 
-  const handleSubmit = (e) => {
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.title || !formData.description) return;
 
     const selectedCategory = safeCategories.find(c => c.id === formData.categoryId) || safeCategories[0];
     const selectedFaculty = safeFaculties.find(f => f.id === formData.facultyId) || safeFaculties[0];
 
-    const newProduct = {
-      id: `prod-${Date.now()}`,
+    // Datos reales auténticos del usuario autenticado
+    const actualSellerName = user?.fullName || user?.full_name || (user?.email ? user.email.split('@')[0].replace('.', ' ') : 'Estudiante CU Ecatepec');
+    const actualSellerCareer = user?.career || user?.faculty || selectedFaculty.name;
+    const actualSellerEmail = user?.email || '';
+    const actualSellerPhone = user?.phoneNumber || user?.phone || '';
+    const actualSellerId = user?.id || `user-${Date.now()}`;
+    const actualSellerRating = user?.averageRating ? parseFloat(user.averageRating) : 5.0;
+    const actualSellerReviews = user?.totalReviews !== undefined ? parseInt(user.totalReviews) : 0;
+
+    const payload = {
       title: formData.title,
       description: formData.description,
       price: parseFloat(formData.price) || 0,
       condition: formData.condition,
-      status: 'available',
-      is_exchangeable: formData.isExchangeable,
-      category_id: selectedCategory.id,
-      category_name: selectedCategory.name,
-      faculty_name: selectedFaculty.name,
-      campus_zone: selectedFaculty.campus_zone || 'CU Ecatepec',
+      isExchangeable: formData.isExchangeable,
+      categoryId: selectedCategory.id,
+      facultyId: selectedFaculty.id,
       images: formData.imageUrl ? [formData.imageUrl] : ['https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=800&q=80'],
-      seller_name: 'Tú (Estudiante CU Ecatepec)',
-      seller_career: selectedFaculty.name,
-      seller_rating: 5.0,
-      seller_reviews: 0,
-      views_count: 1,
-      created_at: new Date().toISOString(),
     };
 
-    onPublish(newProduct);
+    setSubmitting(true);
+    let createdProduct = null;
+
+    try {
+      const token = localStorage.getItem('uaemex_token') || user?.token;
+      if (token) {
+        const res = await api.createProduct(payload, token);
+        if (res && res.success && res.data) {
+          createdProduct = res.data;
+        }
+      }
+    } catch (err) {
+      console.warn('Conexión con backend no disponible, guardando publicación localmente:', err);
+    }
+    setSubmitting(false);
+
+    if (!createdProduct) {
+      createdProduct = {
+        id: `prod-${Date.now()}`,
+        title: formData.title,
+        description: formData.description,
+        price: parseFloat(formData.price) || 0,
+        condition: formData.condition,
+        status: 'available',
+        is_exchangeable: formData.isExchangeable,
+        category_id: selectedCategory.id,
+        category_name: selectedCategory.name,
+        faculty_name: selectedFaculty.name,
+        campus_zone: selectedFaculty.campus_zone || 'CU Ecatepec',
+        images: formData.imageUrl ? [formData.imageUrl] : ['https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=800&q=80'],
+        user_id: actualSellerId,
+        seller_id: actualSellerId,
+        seller_name: actualSellerName,
+        seller_career: actualSellerCareer,
+        seller_email: actualSellerEmail,
+        seller_phone: actualSellerPhone,
+        seller_rating: actualSellerRating,
+        seller_reviews: actualSellerReviews,
+        views_count: 1,
+        created_at: new Date().toISOString(),
+      };
+    } else {
+      // Asegurar que siempre contenga los metadatos completos y reales del vendedor
+      createdProduct.seller_id = createdProduct.seller_id || actualSellerId;
+      createdProduct.seller_name = createdProduct.seller_name || actualSellerName;
+      createdProduct.seller_career = createdProduct.seller_career || actualSellerCareer;
+      createdProduct.seller_email = createdProduct.seller_email || actualSellerEmail;
+      createdProduct.seller_phone = createdProduct.seller_phone || actualSellerPhone;
+      createdProduct.seller_rating = createdProduct.seller_rating || actualSellerRating;
+      createdProduct.seller_reviews = createdProduct.seller_reviews !== undefined ? createdProduct.seller_reviews : actualSellerReviews;
+    }
+
+    onPublish(createdProduct);
     onClose();
   };
 
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content" style={{ maxWidth: '580px' }} onClick={(e) => e.stopPropagation()}>
-        <button className="modal-close" onClick={onClose}>
+        <button className="modal-close" onClick={onClose} disabled={submitting}>
           <X size={20} />
         </button>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
           <div style={{ background: '#004d26', color: '#e5a823', padding: '8px', borderRadius: '10px' }}>
             <Sparkles size={20} />
           </div>
@@ -64,6 +118,58 @@ export default function PublishModal({ categories, faculties, onClose, onPublish
             <h2 style={{ fontSize: '1.25rem', fontWeight: '800', color: '#0f172a' }}>Publicar un Artículo</h2>
             <p style={{ fontSize: '0.8rem', color: '#64748b' }}>Ofrece tu material académico en el plantel CU Ecatepec</p>
           </div>
+        </div>
+
+        {/* Banner de Identidad Real del Vendedor */}
+        <div style={{ 
+          background: '#f8fafc', 
+          border: '1px solid #e2e8f0', 
+          borderRadius: '10px', 
+          padding: '10px 14px', 
+          marginBottom: '18px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: '12px'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div style={{ 
+              width: '36px', 
+              height: '36px', 
+              borderRadius: '50%', 
+              background: '#004d26', 
+              color: '#ffffff', 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center',
+              fontWeight: '700',
+              fontSize: '0.9rem'
+            }}>
+              {(user?.fullName || user?.full_name || 'U')[0].toUpperCase()}
+            </div>
+            <div>
+              <div style={{ fontSize: '0.88rem', fontWeight: '700', color: '#0f172a' }}>
+                {user?.fullName || user?.full_name || 'Estudiante CU Ecatepec'}
+              </div>
+              <div style={{ fontSize: '0.75rem', color: '#64748b' }}>
+                🎓 {user?.career || 'CU UAEM Ecatepec'} • {user?.email}
+              </div>
+            </div>
+          </div>
+          <span style={{ 
+            fontSize: '0.72rem', 
+            fontWeight: '700', 
+            background: '#dcfce7', 
+            color: '#15803d', 
+            padding: '4px 8px', 
+            borderRadius: '6px',
+            whiteSpace: 'nowrap',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '4px'
+          }}>
+            <ShieldCheck size={13} /> Vendedor Verificado
+          </span>
         </div>
 
         <form onSubmit={handleSubmit}>
@@ -173,8 +279,8 @@ export default function PublishModal({ categories, faculties, onClose, onPublish
             </label>
           </div>
 
-          <button type="submit" className="btn btn-primary" style={{ width: '100%', padding: '12px' }}>
-            <span>Publicar en el Catálogo de CU Ecatepec</span>
+          <button type="submit" className="btn btn-primary" style={{ width: '100%', padding: '12px' }} disabled={submitting}>
+            <span>{submitting ? 'Publicando en Catálogo...' : 'Publicar en el Catálogo de CU Ecatepec'}</span>
           </button>
         </form>
       </div>

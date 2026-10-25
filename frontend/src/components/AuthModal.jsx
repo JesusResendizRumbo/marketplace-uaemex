@@ -54,7 +54,10 @@ export default function AuthModal({ initialMode = 'login', onClose, onAuthSucces
     setLoading(false);
 
     if (res.success) {
-      onAuthSuccess(res.user);
+      if (res.token) {
+        localStorage.setItem('uaemex_token', res.token);
+      }
+      onAuthSuccess({ ...res.user, token: res.token });
       onClose();
     } else {
       setError(res.error || 'Código OTP incorrecto o expirado.');
@@ -85,7 +88,10 @@ export default function AuthModal({ initialMode = 'login', onClose, onAuthSucces
     setLoading(false);
 
     if (res.success) {
-      onAuthSuccess(res.user);
+      if (res.token) {
+        localStorage.setItem('uaemex_token', res.token);
+      }
+      onAuthSuccess({ ...res.user, token: res.token });
       onClose();
     } else if (res.requiresVerification) {
       setError('Tu cuenta requiere verificación por código OTP.');

@@ -5,7 +5,7 @@ dotenv.config();
 
 /**
  * Envía el código de verificación OTP por correo institucional.
- * Soporta despacho por HTTPS (Google Apps Script Webhook) para saltar el bloqueo de puertos de Render.
+ * Soporta despacho por HTTPS (Google Apps Script Webhook) para saltar el bloqueo de puertos SMTP de Render.
  */
 export const sendVerificationOTP = async (toEmail, otpCode, userName = 'Universitario') => {
   const emailSubject = `🎓 Tu Código de Verificación PotroTrade: ${otpCode}`;

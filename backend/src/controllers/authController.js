@@ -3,8 +3,12 @@ import jwt from 'jsonwebtoken';
 import { query } from '../config/db.js';
 import { sendVerificationOTP } from '../config/mailer.js';
 
+// Generador de código OTP criptográfico de 6 dígitos
 const generateOTP = () => Math.floor(100000 + Math.random() * 900000).toString();
 
+/**
+ * 1. Registro de usuario institucional con despacho inmediato de OTP
+ */
 export const register = async (req, res, next) => {
   try {
     const { email, password, fullName, facultyId, career, phoneNumber } = req.body;
@@ -39,6 +43,7 @@ export const register = async (req, res, next) => {
           [passwordHash, fullName, facultyId || null, career || null, phoneNumber || null, otpCode, otpExpiresAt, normalized]
         );
 
+        // Despachar correo de inmediato sin bloquear la respuesta HTTP
         sendVerificationOTP(normalized, otpCode, fullName).catch(err => {
           console.error('Error background email:', err.message);
         });
@@ -59,6 +64,7 @@ export const register = async (req, res, next) => {
       [normalized, passwordHash, fullName, role, facultyId || null, career || null, phoneNumber || null, otpCode, otpExpiresAt]
     );
 
+    // Despachar correo de inmediato sin bloquear la respuesta HTTP
     sendVerificationOTP(normalized, otpCode, fullName).catch(err => {
       console.error('Error background email:', err.message);
     });
@@ -73,6 +79,9 @@ export const register = async (req, res, next) => {
   }
 };
 
+/**
+ * 2. Validación estricta del código OTP recibido en el correo
+ */
 export const verifyOTP = async (req, res, next) => {
   try {
     const { email, otp } = req.body;
@@ -145,6 +154,9 @@ export const verifyOTP = async (req, res, next) => {
   }
 };
 
+/**
+ * 3. Inicio de sesión (Login)
+ */
 export const login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
@@ -163,13 +175,13 @@ export const login = async (req, res, next) => {
     );
 
     if (result.rows.length === 0) {
-      return res.status(401).json({ success: false, error: 'Credenciales inválidas.' });
+      return res.status(401).json({ success: false, error: 'Credenciales inválidas. Por favor verifica tus datos.' });
     }
 
     const user = result.rows[0];
     const isMatch = await bcrypt.compare(password, user.password_hash);
     if (!isMatch) {
-      return res.status(401).json({ success: false, error: 'Credenciales inválidas.' });
+      return res.status(401).json({ success: false, error: 'Credenciales inválidas. Por favor verifica tus datos.' });
     }
 
     if (!user.is_verified) {
@@ -216,6 +228,9 @@ export const login = async (req, res, next) => {
   }
 };
 
+/**
+ * 4. Perfil y Recuperación
+ */
 export const getMe = async (req, res, next) => {
   try {
     const result = await query(

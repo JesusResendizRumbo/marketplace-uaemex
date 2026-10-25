@@ -8,8 +8,17 @@ const CONDITION_LABELS = {
   acceptable: 'Con detalles estéticos',
 };
 
-export default function ProductModal({ product, onClose, onStartChat, onStartCheckout }) {
+export default function ProductModal({ product, user, onClose, onStartChat, onStartCheckout }) {
   if (!product) return null;
+
+  const isOwnProduct = Boolean(
+    user && (
+      (product.seller_id && user.id === product.seller_id) ||
+      (product.user_id && user.id === product.user_id) ||
+      (product.seller_email && user.email === product.seller_email) ||
+      (product.seller_name && user.fullName && product.seller_name.trim().toLowerCase() === user.fullName.trim().toLowerCase())
+    )
+  );
 
   const imageUrl = product.images && product.images.length > 0 
     ? product.images[0] 
@@ -67,8 +76,8 @@ export default function ProductModal({ product, onClose, onStartChat, onStartChe
 
             {/* Perfil del Vendedor */}
             <div style={{ 
-              background: '#f8fafc', 
-              border: '1px solid #e2e8f0', 
+              background: isOwnProduct ? '#f0fdf4' : '#f8fafc', 
+              border: isOwnProduct ? '1.5px solid #004d26' : '1px solid #e2e8f0', 
               borderRadius: '10px', 
               padding: '12px 16px',
               display: 'flex',
@@ -77,8 +86,24 @@ export default function ProductModal({ product, onClose, onStartChat, onStartChe
               marginBottom: '20px'
             }}>
               <div>
-                <div style={{ fontWeight: '700', fontSize: '0.9rem', color: '#0f172a' }}>{product.seller_name}</div>
-                <div style={{ fontSize: '0.75rem', color: '#64748b' }}>{product.seller_career || 'Estudiante UAEMex'}</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span style={{ fontWeight: '700', fontSize: '0.9rem', color: '#0f172a' }}>
+                    {product.seller_name || 'Vendedor Universitario'}
+                  </span>
+                  {isOwnProduct && (
+                    <span style={{ fontSize: '0.68rem', background: '#004d26', color: '#ffffff', padding: '2px 6px', borderRadius: '4px', fontWeight: '700' }}>
+                      Tu publicación
+                    </span>
+                  )}
+                </div>
+                <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '2px' }}>
+                  🎓 {product.seller_career || 'Estudiante CU Ecatepec'}
+                </div>
+                {product.seller_email && (
+                  <div style={{ fontSize: '0.72rem', color: '#94a3b8', marginTop: '2px' }}>
+                    ✉️ {product.seller_email}
+                  </div>
+                )}
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '4px', background: '#ffffff', padding: '4px 8px', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
                 <Star size={14} fill="#e5a823" color="#e5a823" />

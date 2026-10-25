@@ -10,6 +10,7 @@ import ChatModal from './components/ChatModal.jsx';
 import CheckoutModal from './components/CheckoutModal.jsx';
 import ProfileModal from './components/ProfileModal.jsx';
 import ReviewModal from './components/ReviewModal.jsx';
+import ReportModal from './components/ReportModal.jsx';
 import { api } from './services/api.js';
 import { 
   MOCK_FACULTIES, 
@@ -44,10 +45,10 @@ const ICON_MAP = {
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('catalog'); // 'catalog' o 'lost-found'
-  const [products, setProducts] = useState([]);
-  const [categories, setCategories] = useState([]);
-  const [faculties, setFaculties] = useState([]);
-  const [lostItems, setLostItems] = useState([]);
+  const [products, setProducts] = useState(MOCK_PRODUCTS);
+  const [categories, setCategories] = useState(MOCK_CATEGORIES);
+  const [faculties, setFaculties] = useState(MOCK_FACULTIES);
+  const [lostItems, setLostItems] = useState(MOCK_LOST_ITEMS);
   const [user, setUser] = useState(() => {
     try {
       const saved = localStorage.getItem('uaemex_user');
@@ -67,6 +68,7 @@ export default function App() {
   // Modales
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [isPublishOpen, setIsPublishOpen] = useState(false);
+  const [isReportOpen, setIsReportOpen] = useState(false);
   const [authModalMode, setAuthModalMode] = useState(null); // null, 'login', 'register'
   const [activeChatProduct, setActiveChatProduct] = useState(null);
   const [checkoutProduct, setCheckoutProduct] = useState(null);
@@ -76,16 +78,20 @@ export default function App() {
   // Carga inicial
   useEffect(() => {
     async function loadInitialData() {
-      const [prods, cats, facs, lost] = await Promise.all([
-        api.getProducts(),
-        api.getCategories(),
-        api.getFaculties(),
-        api.getLostItems(),
-      ]);
-      setProducts(prods);
-      setCategories(cats);
-      setFaculties(facs);
-      setLostItems(lost);
+      try {
+        const [prods, cats, facs, lost] = await Promise.all([
+          api.getProducts(),
+          api.getCategories(),
+          api.getFaculties(),
+          api.getLostItems(),
+        ]);
+        if (prods && Array.isArray(prods) && prods.length > 0) setProducts(prods);
+        if (cats && Array.isArray(cats) && cats.length > 0) setCategories(cats);
+        if (facs && Array.isArray(facs) && facs.length > 0) setFaculties(facs);
+        if (lost && Array.isArray(lost) && lost.length > 0) setLostItems(lost);
+      } catch (err) {
+        console.warn('Conectando con backend...', err.message);
+      }
     }
     loadInitialData();
   }, []);
@@ -289,8 +295,11 @@ export default function App() {
           <LostFoundSection 
             lostItems={lostItems}
             onOpenReportModal={() => {
-              if (!user) setAuthModalMode('login');
-              else alert('Función de reporte de objetos disponible.');
+              if (!user) {
+                setAuthModalMode('login');
+              } else {
+                setIsReportOpen(true);
+              }
             }}
           />
         )}
@@ -313,6 +322,7 @@ export default function App() {
       {selectedProduct && (
         <ProductModal 
           product={selectedProduct} 
+          user={user}
           onClose={() => setSelectedProduct(null)} 
           onStartChat={handleStartChat}
           onStartCheckout={handleStartCheckout}
@@ -334,6 +344,7 @@ export default function App() {
         <PublishModal 
           categories={categories}
           faculties={faculties}
+          user={user}
           onClose={() => setIsPublishOpen(false)}
           onPublish={handlePublish}
         />
@@ -364,6 +375,18 @@ export default function App() {
           onUpdateUser={(updated) => {
             localStorage.setItem('uaemex_user', JSON.stringify(updated));
             setUser(updated);
+            // Sincronizar publicaciones del usuario con su nombre y carrera actualizados
+            setProducts(prev => prev.map(p => {
+              if (p.seller_id === updated.id || p.seller_email === updated.email || p.seller_name === user?.fullName) {
+                return {
+                  ...p,
+                  seller_name: updated.fullName,
+                  seller_career: updated.career,
+                  seller_phone: updated.phoneNumber,
+                };
+              }
+              return p;
+            }));
           }}
           onClose={() => setIsProfileOpen(false)}
           onOpenReviewForProduct={(sellerName, productTitle) => {
@@ -379,6 +402,17 @@ export default function App() {
           onClose={() => setReviewModalData(null)}
           onSubmitReview={(review) => {
             console.log('Reseña guardada:', review);
+          }}
+        />
+      )}
+
+      {isReportOpen && (
+        <ReportModal 
+          faculties={faculties}
+          user={user}
+          onClose={() => setIsReportOpen(false)}
+          onReportCreated={(newReport) => {
+            setLostItems(prev => [newReport, ...prev]);
           }}
         />
       )}

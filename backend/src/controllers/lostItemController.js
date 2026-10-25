@@ -74,10 +74,10 @@ export const createLostItem = async (req, res, next) => {
     const sql = `
       INSERT INTO lost_items (user_id, faculty_id, title, description, location_details, event_date, type, images, status)
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'open')
-      RETURNING *
+      RETURNING id
     `;
 
-    const result = await query(sql, [
+    const insertResult = await query(sql, [
       userId,
       facultyId,
       title,
@@ -88,10 +88,24 @@ export const createLostItem = async (req, res, next) => {
       Array.isArray(images) ? images : [],
     ]);
 
+    const newReportId = insertResult.rows[0].id;
+
+    const detailSql = `
+      SELECT 
+        l.*,
+        f.name as faculty_name, f.campus_zone,
+        u.full_name as reporter_name, u.email as reporter_email, u.career as reporter_career
+      FROM lost_items l
+      LEFT JOIN faculties f ON l.faculty_id = f.id
+      LEFT JOIN users u ON l.user_id = u.id
+      WHERE l.id = $1
+    `;
+    const fullResult = await query(detailSql, [newReportId]);
+
     res.status(201).json({
       success: true,
       message: 'Reporte registrado exitosamente.',
-      data: result.rows[0],
+      data: fullResult.rows[0] || insertResult.rows[0],
     });
   } catch (error) {
     next(error);

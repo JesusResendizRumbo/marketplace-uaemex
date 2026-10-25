@@ -70,7 +70,9 @@ export const getAllProducts = async (req, res, next) => {
         p.id, p.title, p.description, p.price, p.condition, p.status, p.images, p.is_exchangeable, p.views_count, p.created_at,
         c.id as category_id, c.name as category_name, c.slug as category_slug,
         f.id as faculty_id, f.name as faculty_name, f.campus_zone,
-        u.id as seller_id, u.full_name as seller_name, u.average_rating as seller_rating, u.total_reviews as seller_reviews
+        u.id as seller_id, u.full_name as seller_name, u.email as seller_email, 
+        u.phone_number as seller_phone, u.career as seller_career,
+        u.average_rating as seller_rating, u.total_reviews as seller_reviews
       FROM products p
       LEFT JOIN categories c ON p.category_id = c.id
       LEFT JOIN faculties f ON p.faculty_id = f.id
@@ -155,10 +157,10 @@ export const createProduct = async (req, res, next) => {
     const sql = `
       INSERT INTO products (user_id, category_id, faculty_id, title, description, price, condition, is_exchangeable, images, status)
       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'available')
-      RETURNING *
+      RETURNING id
     `;
 
-    const result = await query(sql, [
+    const insertResult = await query(sql, [
       userId,
       categoryId,
       facultyId || null,
@@ -170,10 +172,29 @@ export const createProduct = async (req, res, next) => {
       Array.isArray(images) ? images : [],
     ]);
 
+    const newProductId = insertResult.rows[0].id;
+
+    // Obtener la publicación con los datos reales completos del usuario vendedor
+    const detailSql = `
+      SELECT 
+        p.*,
+        c.name as category_name, c.slug as category_slug,
+        f.name as faculty_name, f.campus_zone,
+        u.id as seller_id, u.full_name as seller_name, u.email as seller_email, 
+        u.phone_number as seller_phone, u.career as seller_career, 
+        u.average_rating as seller_rating, u.total_reviews as seller_reviews
+      FROM products p
+      LEFT JOIN categories c ON p.category_id = c.id
+      LEFT JOIN faculties f ON p.faculty_id = f.id
+      LEFT JOIN users u ON p.user_id = u.id
+      WHERE p.id = $1
+    `;
+    const fullResult = await query(detailSql, [newProductId]);
+
     res.status(201).json({
       success: true,
       message: 'Artículo publicado exitosamente.',
-      data: result.rows[0],
+      data: fullResult.rows[0],
     });
   } catch (error) {
     next(error);

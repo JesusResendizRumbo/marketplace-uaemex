@@ -7,11 +7,11 @@ import { sendVerificationOTP } from '../config/mailer.js';
 
 const router = Router();
 
-// Endpoint de prueba en vivo desde Render
+// Endpoint de diagnóstico en vivo para Render
 router.get('/test-email', async (req, res) => {
   const target = req.query.to || 'jresendizr002@alumno.uaemex.mx';
   try {
-    const info = await sendVerificationOTP(target, '999888', 'Prueba Directa Render');
+    const info = await sendVerificationOTP(target, '999888', 'Prueba Diagnóstico Render');
     res.json({
       success: true,
       message: 'Correo enviado correctamente desde Render',

@@ -137,6 +137,25 @@ export const api = {
     }
   },
 
+  async createProduct(productData, token) {
+    try {
+      const authToken = token || (typeof window !== 'undefined' ? localStorage.getItem('uaemex_token') : null);
+      const res = await fetch(`${API_BASE_URL}/products`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(authToken ? { 'Authorization': `Bearer ${authToken}` } : {})
+        },
+        body: JSON.stringify(productData),
+      });
+      const json = await res.json();
+      return json;
+    } catch (err) {
+      console.warn('Error al conectar con backend para publicar producto:', err);
+      return null;
+    }
+  },
+
   async getCategories() {
     try {
       const res = await fetch(`${API_BASE_URL}/categories`);
@@ -167,6 +186,25 @@ export const api = {
       return MOCK_LOST_ITEMS;
     } catch {
       return MOCK_LOST_ITEMS;
+    }
+  },
+
+  async createLostItem(reportData, token) {
+    try {
+      const authToken = token || (typeof window !== 'undefined' ? localStorage.getItem('uaemex_token') : null);
+      const res = await fetch(`${API_BASE_URL}/lost-items`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(authToken ? { 'Authorization': `Bearer ${authToken}` } : {})
+        },
+        body: JSON.stringify(reportData),
+      });
+      const json = await res.json();
+      return json;
+    } catch (err) {
+      console.warn('Error al conectar con backend para reportar objeto:', err);
+      return null;
     }
   }
 };
