@@ -31,10 +31,10 @@ export default function ProductModal({ product, user, onClose, onStartChat, onSt
           <X size={20} />
         </button>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '24px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '20px' }}>
           {/* Imagen */}
           <div>
-            <div style={{ borderRadius: '12px', overflow: 'hidden', height: '280px', backgroundColor: '#e2e8f0' }}>
+            <div style={{ borderRadius: '12px', overflow: 'hidden', height: '240px', backgroundColor: '#e2e8f0' }}>
               <img src={imageUrl} alt={product.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
             </div>
             

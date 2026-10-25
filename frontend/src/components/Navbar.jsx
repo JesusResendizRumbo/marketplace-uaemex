@@ -17,20 +17,20 @@ export default function Navbar({
         {/* Brand */}
         <div className="brand" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
           <div className="brand-icon">
-            <ShoppingBag size={24} />
+            <ShoppingBag size={22} />
           </div>
           <div className="brand-text">
             <h1>PotroTrade</h1>
-            <span>CU UAEM Ecatepec</span>
+            <span>CU Ecatepec</span>
           </div>
         </div>
 
-        {/* Search */}
-        <div className="nav-search">
+        {/* Search Desktop */}
+        <div className="nav-search nav-search-desktop">
           <Search size={18} className="nav-search-icon" />
           <input 
             type="text" 
-            placeholder="Buscar libros, calculadoras, batas, uniformes..." 
+            placeholder="Buscar libros, calculadoras, batas, códigos..." 
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
@@ -40,54 +40,58 @@ export default function Navbar({
         <div className="nav-actions">
           {user ? (
             <>
-              <button className="btn btn-primary" onClick={onOpenPublish}>
+              <button className="btn btn-primary btn-publish-nav" onClick={onOpenPublish} title="Vender Artículo">
                 <PlusCircle size={18} />
-                <span>Vender Artículo</span>
+                <span className="btn-text-desktop">Vender Artículo</span>
+                <span className="btn-text-mobile">Vender</span>
               </button>
 
-              <button className="btn btn-secondary" onClick={onOpenChat} title="Mis Mensajes">
+              <button className="btn btn-secondary btn-icon-nav" onClick={onOpenChat} title="Mis Mensajes">
                 <MessageSquare size={18} />
               </button>
 
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginLeft: '6px' }}>
-                <button 
-                  onClick={onOpenProfile} 
-                  className="btn btn-secondary"
-                  style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 12px', borderRadius: '20px' }}
-                  title="Mi Perfil y Cobros"
-                >
-                  <div style={{ 
-                    background: '#004d26', 
-                    color: '#e5a823', 
-                    width: '26px', 
-                    height: '26px', 
-                    borderRadius: '50%', 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    justifyContent: 'center',
-                    fontWeight: '700',
-                    fontSize: '0.8rem'
-                  }}>
-                    {user.fullName ? user.fullName[0].toUpperCase() : 'U'}
-                  </div>
-                  <span style={{ fontSize: '0.85rem', fontWeight: '700', color: '#004d26' }}>Mi Perfil / Cobros</span>
-                </button>
+              <button 
+                onClick={onOpenProfile} 
+                className="btn btn-secondary btn-profile-nav"
+                title="Mi Perfil y Cobros"
+              >
+                <div className="profile-avatar-pill">
+                  {user.fullName ? user.fullName[0].toUpperCase() : 'U'}
+                </div>
+                <span className="profile-text-desktop">Mi Perfil</span>
+              </button>
 
-                <button className="btn btn-secondary" style={{ padding: '8px' }} onClick={onLogout} title="Cerrar Sesión">
-                  <LogOut size={16} />
-                </button>
-              </div>
+              <button className="btn btn-secondary btn-icon-nav btn-logout-nav" onClick={onLogout} title="Cerrar Sesión">
+                <LogOut size={16} />
+              </button>
             </>
           ) : (
             <>
-              <button className="btn btn-secondary" onClick={() => onOpenAuth('login')}>
-                <User size={18} />
-                <span>Ingresar</span>
+              <button className="btn btn-secondary btn-login-nav" onClick={() => onOpenAuth('login')}>
+                <User size={17} />
+                <span>Entrar</span>
               </button>
-              <button className="btn btn-primary" onClick={() => onOpenAuth('register')}>
-                <span>Registrarse (@uaemex)</span>
+              <button className="btn btn-primary btn-register-nav" onClick={() => onOpenAuth('register')}>
+                <span className="btn-text-desktop">Registrarse (@uaemex)</span>
+                <span className="btn-text-mobile">Registro</span>
               </button>
             </>
+          )}
+        </div>
+      </div>
+
+      {/* Mobile Search Bar */}
+      <div className="nav-search-mobile">
+        <div className="mobile-search-wrapper">
+          <Search size={17} className="mobile-search-icon" />
+          <input 
+            type="text" 
+            placeholder="Buscar libros, calculadoras, uniformes..." 
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+          {searchQuery && (
+            <button className="mobile-search-clear" onClick={() => setSearchQuery('')}>✕</button>
           )}
         </div>
       </div>

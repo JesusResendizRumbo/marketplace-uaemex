@@ -108,7 +108,7 @@ export default function LostFoundSection({ lostItems, user, onOpenReportModal, o
           </p>
         </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '20px' }}>
+        <div className="lost-found-grid">
           {filteredItems.map(item => {
             const isFound = item.type === 'found';
             const isResolved = item.status === 'resolved';

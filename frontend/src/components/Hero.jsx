@@ -6,10 +6,10 @@ export default function Hero({ onExploreClick, onOpenPublish, totalProducts = 24
     <section className="hero">
       <div className="container">
         <div className="hero-content">
-          <div>
+          <div className="hero-text-block">
             <div className="hero-badge">
-              <ShieldCheck size={16} />
-              <span>Exclusivo para la Comunidad del Centro Universitario UAEM Ecatepec</span>
+              <ShieldCheck size={15} />
+              <span>Exclusivo CU UAEM Ecatepec</span>
             </div>
             
             <h2 className="hero-title">
@@ -18,20 +18,19 @@ export default function Hero({ onExploreClick, onOpenPublish, totalProducts = 24
             </h2>
 
             <p className="hero-subtitle">
-              Compra y vende material académico, calculadoras, libros de derecho e informática y uniformes con <strong>Pago Seguro con Tarjeta Web</strong> y puntos de entrega dentro del plantel Ecatepec.
+              Compra y vende libros, calculadoras y uniformes con <strong>Pago Seguro con Tarjeta</strong> y entregas dentro del plantel.
             </p>
 
-            <div style={{ marginTop: '24px', display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-              <button className="btn btn-gold" onClick={onExploreClick}>
-                <span>Explorar Catálogo Ecatepec</span>
-                <ArrowRight size={18} />
+            <div className="hero-actions">
+              <button className="btn btn-gold btn-hero-explore" onClick={onExploreClick}>
+                <span>Explorar Catálogo</span>
+                <ArrowRight size={17} />
               </button>
               <button 
-                className="btn" 
-                style={{ background: 'rgba(255,255,255,0.15)', color: '#ffffff', border: '1px solid rgba(255,255,255,0.3)' }}
+                className="btn btn-hero-sell" 
                 onClick={onOpenPublish}
               >
-                <span>Vender Material Académico</span>
+                <span>Vender Material</span>
               </button>
             </div>
           </div>
@@ -39,15 +38,15 @@ export default function Hero({ onExploreClick, onOpenPublish, totalProducts = 24
           <div className="hero-stats">
             <div className="stat-card">
               <div className="stat-number">6</div>
-              <div className="stat-label">Carreras Ecatepec</div>
+              <div className="stat-label">Carreras</div>
             </div>
             <div className="stat-card">
               <div className="stat-number">💳</div>
-              <div className="stat-label">Pago Web Protegido</div>
+              <div className="stat-label">Pago Seguro</div>
             </div>
             <div className="stat-card">
               <div className="stat-number">100%</div>
-              <div className="stat-label">Comunidad Verificada</div>
+              <div className="stat-label">CU Ecatepec</div>
             </div>
           </div>
         </div>

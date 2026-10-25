@@ -391,6 +391,12 @@ body {
   gap: 24px;
 }
 
+.lost-found-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
+}
+
 .product-card {
   background: #ffffff;
   border: 1px solid var(--border-color);
@@ -589,31 +595,403 @@ body {
   box-shadow: 0 0 0 3px rgba(0, 77, 38, 0.12);
 }
 
-/* Responsividad */
+/* ==============================================================================
+   📱 SISTEMA COMPLETO DE RESPONSIVIDAD MÓVIL (CU UAEM ECATEPEC)
+   ============================================================================== */
+
+/* Base & Global Protection against Horizontal Overflow */
+html, body {
+  overflow-x: hidden;
+  width: 100%;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.btn-text-mobile {
+  display: none;
+}
+
+.nav-search-mobile {
+  display: none;
+}
+
+/* Tablet & Mobile (< 960px) */
 @media (max-width: 960px) {
+  .container {
+    padding: 0 16px;
+  }
+
   .marketplace-layout {
     grid-template-columns: 1fr;
+    gap: 20px;
   }
+
   .filters-sidebar {
     position: static;
+    margin-bottom: 8px;
+    padding: 18px;
   }
+
   .hero-content {
     flex-direction: column;
     text-align: center;
+    gap: 24px;
   }
+
   .hero-subtitle {
     margin: 0 auto;
   }
+
+  .hero-actions {
+    justify-content: center;
+  }
+
   .hero-stats {
     justify-content: center;
+    width: 100%;
   }
 }
 
-@media (max-width: 640px) {
-  .nav-search {
+/* Mobile Screens (< 768px) */
+@media (max-width: 768px) {
+  /* Navbar */
+  .nav-container {
+    height: 60px;
+  }
+
+  .brand-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 9px;
+  }
+
+  .brand-text h1 {
+    font-size: 1.1rem;
+  }
+
+  .brand-text span {
+    font-size: 0.68rem;
+  }
+
+  .nav-search-desktop {
     display: none;
   }
+
+  .nav-actions {
+    gap: 6px;
+  }
+
+  .btn-text-desktop {
+    display: none;
+  }
+
+  .btn-text-mobile {
+    display: inline;
+  }
+
+  .btn {
+    padding: 8px 12px;
+    font-size: 0.82rem;
+  }
+
+  .btn-publish-nav {
+    padding: 8px 12px;
+    font-weight: 700;
+  }
+
+  .btn-icon-nav {
+    padding: 8px !important;
+  }
+
+  .btn-profile-nav {
+    padding: 4px 8px !important;
+    gap: 6px !important;
+  }
+
+  .profile-avatar-pill {
+    background: var(--uaemex-green);
+    color: var(--uaemex-gold);
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 0.75rem;
+  }
+
+  .profile-text-desktop {
+    display: none;
+  }
+
+  .btn-login-nav, .btn-register-nav {
+    padding: 7px 10px;
+    font-size: 0.8rem;
+  }
+
+  /* Barra de búsqueda móvil integrada */
+  .nav-search-mobile {
+    display: block;
+    padding: 0 16px 10px 16px;
+    background-color: #ffffff;
+    border-bottom: 1px solid var(--border-color);
+  }
+
+  .mobile-search-wrapper {
+    position: relative;
+    width: 100%;
+  }
+
+  .mobile-search-wrapper input {
+    width: 100%;
+    padding: 9px 36px 9px 38px;
+    background-color: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    border-radius: 20px;
+    font-size: 15px;
+    color: var(--text-main);
+    transition: all 0.2s;
+  }
+
+  .mobile-search-wrapper input:focus {
+    outline: none;
+    background-color: #ffffff;
+    border-color: var(--uaemex-green);
+    box-shadow: 0 0 0 3px rgba(0, 77, 38, 0.12);
+  }
+
+  .mobile-search-icon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-muted);
+  }
+
+  .mobile-search-clear {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: #94a3b8;
+    font-size: 14px;
+    cursor: pointer;
+  }
+
+  /* Hero */
+  .hero {
+    padding: 28px 0 32px 0;
+    border-radius: 0 0 18px 18px;
+    margin-bottom: 20px;
+  }
+
+  .hero-badge {
+    font-size: 0.72rem;
+    padding: 4px 10px;
+    margin-bottom: 10px;
+  }
+
   .hero-title {
-    font-size: 1.8rem;
+    font-size: 1.65rem;
+    line-height: 1.18;
+    margin-bottom: 8px;
+  }
+
+  .hero-subtitle {
+    font-size: 0.88rem;
+    line-height: 1.5;
+  }
+
+  .hero-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
+    margin-top: 16px;
+  }
+
+  .btn-hero-explore, .btn-hero-sell {
+    width: 100%;
+    padding: 12px;
+    font-size: 0.92rem;
+  }
+
+  .btn-hero-sell {
+    background: rgba(255, 255, 255, 0.15) !important;
+    color: #ffffff !important;
+    border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  }
+
+  /* Estadísticas Hero en móvil: 3 columnas compactas sin desborde */
+  .hero-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    width: 100%;
+  }
+
+  .stat-card {
+    padding: 10px 6px;
+    border-radius: 12px;
+  }
+
+  .stat-number {
+    font-size: 1.35rem;
+  }
+
+  .stat-label {
+    font-size: 0.68rem;
+  }
+
+  /* Tabs de Navegación */
+  .tabs-nav {
+    gap: 6px;
+    margin-bottom: 16px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .tab-btn {
+    padding: 10px 12px;
+    font-size: 0.82rem;
+    white-space: nowrap;
+    flex: 1;
+    justify-content: center;
+  }
+
+  /* Cuadrícula de Productos en Móvil: 2 Columnas estilo app nativa */
+  .products-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+
+  .lost-found-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .product-card {
+    border-radius: 12px;
+  }
+
+  .product-img-wrapper {
+    height: 135px;
+  }
+
+  .product-badge {
+    font-size: 0.65rem;
+    padding: 2px 6px;
+    top: 6px;
+    left: 6px;
+  }
+
+  .product-badge-condition {
+    font-size: 0.62rem;
+    padding: 2px 6px;
+    bottom: 6px;
+    right: 6px;
+  }
+
+  .product-body {
+    padding: 10px;
+  }
+
+  .product-category {
+    font-size: 0.65rem;
+    margin-bottom: 2px;
+  }
+
+  .product-title {
+    font-size: 0.84rem;
+    line-height: 1.25;
+    margin-bottom: 6px;
+    height: 2.5em;
+  }
+
+  .product-location {
+    font-size: 0.72rem;
+    margin-bottom: 8px;
+    gap: 3px;
+  }
+
+  .product-footer {
+    padding-top: 8px;
+  }
+
+  .product-price {
+    font-size: 1.05rem;
+  }
+
+  .seller-meta {
+    font-size: 0.72rem;
+  }
+
+  /* Modales en Móvil: Bottom-Sheet adaptativo */
+  .modal-overlay {
+    padding: 0;
+    align-items: flex-end;
+  }
+
+  .modal-content {
+    max-width: 100% !important;
+    width: 100% !important;
+    max-height: 90vh !important;
+    border-radius: 20px 20px 0 0 !important;
+    padding: 20px 16px 30px 16px !important;
+    box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.25) !important;
+  }
+
+  /* Importante para Safari iOS: prevenir zoom automático en inputs */
+  .form-input, .form-textarea, .filter-select {
+    font-size: 16px !important;
+    padding: 11px 12px;
+  }
+
+  /* Filtros en móvil */
+  .filters-sidebar {
+    padding: 16px;
+    border-radius: 12px;
+  }
+
+  .filter-group {
+    margin-bottom: 14px;
+  }
+
+  .filter-title {
+    font-size: 0.88rem;
+    margin-bottom: 6px;
   }
 }
+
+/* Pantallas Extra Pequeñas (< 380px) */
+@media (max-width: 380px) {
+  .brand-text span {
+    display: none;
+  }
+
+  .btn {
+    padding: 7px 9px;
+    font-size: 0.78rem;
+  }
+
+  .products-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .product-img-wrapper {
+    height: 180px;
+  }
+
+  footer .container {
+    text-align: center !important;
+    justify-content: center !important;
+  }
+
+  footer div {
+    text-align: center !important;
+  }
+}
+
