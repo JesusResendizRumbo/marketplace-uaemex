@@ -49,7 +49,11 @@ export default function App() {
   const [products, setProducts] = useState(() => {
     try {
       const saved = localStorage.getItem('potrotrade_products');
-      return saved ? JSON.parse(saved) : [];
+      if (!saved) return [];
+      const parsed = JSON.parse(saved);
+      return Array.isArray(parsed) 
+        ? parsed.filter(p => !p.id?.startsWith('prod-eca-') && !p.id?.startsWith('mock-'))
+        : [];
     } catch {
       return [];
     }
@@ -59,7 +63,11 @@ export default function App() {
   const [lostItems, setLostItems] = useState(() => {
     try {
       const saved = localStorage.getItem('potrotrade_lost_items');
-      return saved ? JSON.parse(saved) : [];
+      if (!saved) return [];
+      const parsed = JSON.parse(saved);
+      return Array.isArray(parsed) 
+        ? parsed.filter(i => !i.id?.startsWith('lost-eca-') && !i.id?.startsWith('mock-'))
+        : [];
     } catch {
       return [];
     }
@@ -108,10 +116,15 @@ export default function App() {
         let localProds = [];
         try {
           const saved = localStorage.getItem('potrotrade_products');
-          if (saved) localProds = JSON.parse(saved);
+          if (saved) {
+            const parsed = JSON.parse(saved);
+            if (Array.isArray(parsed)) {
+              localProds = parsed.filter(p => !p.id?.startsWith('prod-eca-') && !p.id?.startsWith('mock-'));
+            }
+          }
         } catch {}
 
-        const serverProds = Array.isArray(prods) ? prods : [];
+        const serverProds = Array.isArray(prods) ? prods.filter(p => !p.id?.startsWith('prod-eca-') && !p.id?.startsWith('mock-')) : [];
         const combinedProdsMap = new Map();
         serverProds.forEach(p => combinedProdsMap.set(p.id, p));
         localProds.forEach(p => {
@@ -125,10 +138,15 @@ export default function App() {
         let localLost = [];
         try {
           const saved = localStorage.getItem('potrotrade_lost_items');
-          if (saved) localLost = JSON.parse(saved);
+          if (saved) {
+            const parsed = JSON.parse(saved);
+            if (Array.isArray(parsed)) {
+              localLost = parsed.filter(i => !i.id?.startsWith('lost-eca-') && !i.id?.startsWith('mock-'));
+            }
+          }
         } catch {}
 
-        const serverLost = Array.isArray(lost) ? lost : [];
+        const serverLost = Array.isArray(lost) ? lost.filter(i => !i.id?.startsWith('lost-eca-') && !i.id?.startsWith('mock-')) : [];
         const combinedLostMap = new Map();
         serverLost.forEach(i => combinedLostMap.set(i.id, i));
         localLost.forEach(i => {

@@ -36,38 +36,8 @@ export default function ProfileModal({ user, onUpdateUser, onClose, onOpenReview
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [inputDeliveryCode, setInputDeliveryCode] = useState('');
   const [deliverySuccessMsg, setDeliverySuccessMsg] = useState('');
-  const [salesList, setSalesList] = useState([
-    {
-      id: 'ord-v1',
-      title: 'Manual de Psicometría y Fichas Raven',
-      buyer: 'Mariana Rosas (Psicología)',
-      amount: 380.00,
-      status: 'held_in_escrow', // en custodia
-      date: 'Hoy, 10:30 AM',
-      correctCode: '4821',
-    },
-    {
-      id: 'ord-v2',
-      title: 'Calculadora Casio fx-991LAX',
-      buyer: 'Eduardo Santana (Computación)',
-      amount: 490.00,
-      status: 'released', // entregado y pagado
-      date: '28 de Agosto',
-      depositedTo: 'BBVA (••• 1234)',
-    }
-  ]);
-
-  const [purchasesList, setPurchasesList] = useState([
-    {
-      id: 'ord-c1',
-      title: 'Código Nacional de Procedimientos Penales 2026',
-      seller: 'Paola Martínez Juárez',
-      amount: 260.00,
-      deliveryCode: '7429', // Código que el comprador debe dar al vendedor
-      status: 'pending_delivery',
-      date: 'Hoy',
-    }
-  ]);
+  const [salesList, setSalesList] = useState([]);
+  const [purchasesList, setPurchasesList] = useState([]);
 
   const handleSaveProfile = (e) => {
     e.preventDefault();
