@@ -116,9 +116,14 @@ export default function PublishModal({ categories, faculties, user, onClose, onP
       description: formData.description,
       price: parseFloat(formData.price) || 0,
       condition: formData.condition,
-      isExchangeable: formData.isExchangeable,
-      categoryId: selectedCategory.id,
-      facultyId: selectedFaculty.id,
+      is_exchangeable: Boolean(formData.isExchangeable),
+      status: 'available',
+      seller_name: actualSellerName,
+      seller_career: actualSellerCareer,
+      seller_email: actualSellerEmail,
+      seller_phone: actualSellerPhone,
+      faculty_name: selectedFaculty.name,
+      category_name: selectedCategory.name,
       images: formData.imageUrl ? [formData.imageUrl] : ['https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=800&q=80'],
     };
 
@@ -126,15 +131,12 @@ export default function PublishModal({ categories, faculties, user, onClose, onP
     let createdProduct = null;
 
     try {
-      const token = localStorage.getItem('uaemex_token') || user?.token;
-      if (token) {
-        const res = await api.createProduct(payload, token);
-        if (res && res.success && res.data) {
-          createdProduct = res.data;
-        }
+      const res = await api.createProduct(payload);
+      if (res && res.success && res.data) {
+        createdProduct = res.data;
       }
     } catch (err) {
-      console.warn('Conexión con backend no disponible, guardando publicación localmente:', err);
+      console.warn('Conexión con Supabase no disponible, guardando publicación localmente:', err);
     }
     setSubmitting(false);
 

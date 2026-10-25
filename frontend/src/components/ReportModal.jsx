@@ -102,10 +102,13 @@ export default function ReportModal({ faculties, user, initialType = 'lost', onC
     const payload = {
       title: formData.title,
       description: formData.description,
-      locationDetails: formData.locationDetails,
-      eventDate: formData.eventDate,
+      location_details: formData.locationDetails,
+      event_date: formData.eventDate,
       type,
-      facultyId: selectedFaculty.id,
+      status: 'open',
+      faculty_name: selectedFaculty.name,
+      reporter_name: reporterName,
+      reporter_email: reporterEmail,
       images: formData.imageUrl ? [formData.imageUrl] : [],
     };
 
@@ -113,15 +116,12 @@ export default function ReportModal({ faculties, user, initialType = 'lost', onC
     let createdReport = null;
 
     try {
-      const token = localStorage.getItem('uaemex_token') || user?.token;
-      if (token) {
-        const res = await api.createLostItem(payload, token);
-        if (res && res.success && res.data) {
-          createdReport = res.data;
-        }
+      const res = await api.createLostItem(payload);
+      if (res && res.success && res.data) {
+        createdReport = res.data;
       }
     } catch (err) {
-      console.warn('Conexión con backend no disponible, guardando reporte localmente:', err);
+      console.warn('Conexión con Supabase no disponible, guardando reporte localmente:', err);
     }
     setSubmitting(false);
 
