@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, ShieldCheck, Mail, Lock, User, KeyRound, AlertCircle, CheckCircle2, ArrowLeft, RefreshCw } from 'lucide-react';
 import { api } from '../services/api.js';
 
@@ -13,7 +13,14 @@ export default function AuthModal({ initialMode = 'login', onClose, onAuthSucces
   const [successMsg, setSuccessMsg] = useState('');
   const [loading, setLoading] = useState(false);
   const [resending, setResending] = useState(false);
-  const [rememberMe, setRememberMe] = useState(false);
+  const [rememberMe, setRememberMe] = useState(true);
+
+  // Sincronizar el modo cuando el usuario abre el modal desde distintos botones (Entrar vs Registro)
+  useEffect(() => {
+    setMode(initialMode || 'login');
+    setError('');
+    setSuccessMsg('');
+  }, [initialMode]);
 
   // Registro: Envía los datos al backend y despacha el correo OTP real
   const handleRegister = async (e) => {
@@ -66,7 +73,7 @@ export default function AuthModal({ initialMode = 'login', onClose, onAuthSucces
     setLoading(false);
 
     if (res.success) {
-      onAuthSuccess({ ...res.user, token: res.token }, rememberMe);
+      onAuthSuccess({ ...res.user, token: res.token }, true);
       onClose();
     } else {
       setError(res.error || 'Código OTP incorrecto o expirado.');
@@ -100,10 +107,10 @@ export default function AuthModal({ initialMode = 'login', onClose, onAuthSucces
       onAuthSuccess({ ...res.user, token: res.token }, rememberMe);
       onClose();
     } else if (res.requiresVerification) {
-      setError('Tu cuenta requiere verificación por código OTP.');
+      setSuccessMsg('Verificación por correo requerida por primera vez.');
       setMode('otp');
     } else {
-      setError(res.error || 'Credenciales inválidas.');
+      setError(res.error || 'Credenciales inválidas. Verifica tu correo institucional y contraseña.');
     }
   };
 

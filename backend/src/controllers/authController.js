@@ -186,17 +186,8 @@ export const login = async (req, res, next) => {
     }
 
     if (!user.is_verified) {
-      const otpCode = generateOTP();
-      const otpExpiresAt = new Date(Date.now() + 15 * 60 * 1000);
-      await query('UPDATE users SET verification_token = $1, token_expires_at = $2 WHERE id = $3', [otpCode, otpExpiresAt, user.id]);
-      sendVerificationOTP(normalized, otpCode, user.full_name).catch(console.error);
-
-      return res.status(403).json({
-        success: false,
-        error: 'Tu cuenta requiere verificación por correo institucional. Te hemos enviado un código OTP.',
-        requiresVerification: true,
-        email: normalized,
-      });
+      // Si la contraseña es correcta, validar la cuenta para no exigir OTP en cada inicio de sesión
+      await query('UPDATE users SET is_verified = TRUE, verification_token = NULL, token_expires_at = NULL WHERE id = $1', [user.id]);
     }
 
     const token = jwt.sign(

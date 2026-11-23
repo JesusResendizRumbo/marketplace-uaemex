@@ -76,22 +76,27 @@ export default function App() {
   });
   const [user, setUser] = useState(() => {
     try {
-      // 1. Prioridad: sesión activa en la pestaña/ventana actual
-      const sessionSaved = sessionStorage.getItem('uaemex_user');
-      if (sessionSaved) {
-        return JSON.parse(sessionSaved);
-      }
-
-      // 2. Si eligió 'Mantener sesión', validar que no haya expirado en localStorage
+      // 1. Sesión persistente en este dispositivo (localStorage)
       const localSaved = localStorage.getItem('uaemex_user');
       if (localSaved) {
         const parsed = JSON.parse(localSaved);
-        if (parsed.loginExpiresAt && Date.now() > parsed.loginExpiresAt) {
+        if (!parsed.loginExpiresAt || Date.now() <= parsed.loginExpiresAt) {
+          try {
+            sessionStorage.setItem('uaemex_user', JSON.stringify(parsed));
+            const token = localStorage.getItem('uaemex_token');
+            if (token) sessionStorage.setItem('uaemex_token', token);
+          } catch {}
+          return parsed;
+        } else {
           localStorage.removeItem('uaemex_user');
           localStorage.removeItem('uaemex_token');
-          return null;
         }
-        return parsed;
+      }
+
+      // 2. Sesión temporal en la pestaña actual (sessionStorage)
+      const sessionSaved = sessionStorage.getItem('uaemex_user');
+      if (sessionSaved) {
+        return JSON.parse(sessionSaved);
       }
       return null;
     } catch {
@@ -121,6 +126,7 @@ export default function App() {
   const prevUnreadIdsRef = useRef(new Set());
   const isFirstFetchRef = useRef(true);
   const [checkoutProduct, setCheckoutProduct] = useState(null);
+  const [checkoutInitialMethod, setCheckoutInitialMethod] = useState('card');
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [reviewModalData, setReviewModalData] = useState(null);
 
@@ -365,12 +371,13 @@ export default function App() {
     setActiveChatProduct(product);
   };
 
-  const handleStartCheckout = (product) => {
+  const handleStartCheckout = (product, method = 'card') => {
     if (!user) {
       setAuthModalMode('login');
       return;
     }
     setSelectedProduct(null);
+    setCheckoutInitialMethod(method);
     setCheckoutProduct(product);
   };
 
@@ -658,8 +665,9 @@ export default function App() {
         <CheckoutModal 
           product={checkoutProduct}
           user={user}
+          initialMethod={checkoutInitialMethod}
           onClose={() => setCheckoutProduct(null)}
-          onPaymentSuccess={(productId) => {
+          onPaymentSuccess={(productId, method) => {
             handleUpdateProductStatus(productId, 'reserved');
           }}
         />
@@ -683,14 +691,17 @@ export default function App() {
         <AuthModal 
           initialMode={authModalMode}
           onClose={() => setAuthModalMode(null)}
-          onAuthSuccess={(userData, rememberMe = false) => {
+          onAuthSuccess={(userData, rememberMe = true) => {
             const userWithExpiry = {
               ...userData,
-              loginExpiresAt: Date.now() + 24 * 60 * 60 * 1000,
+              loginExpiresAt: Date.now() + 30 * 24 * 60 * 60 * 1000,
+              rememberMe: Boolean(rememberMe),
             };
             if (rememberMe) {
               localStorage.setItem('uaemex_user', JSON.stringify(userWithExpiry));
               if (userData.token) localStorage.setItem('uaemex_token', userData.token);
+              sessionStorage.setItem('uaemex_user', JSON.stringify(userWithExpiry));
+              if (userData.token) sessionStorage.setItem('uaemex_token', userData.token);
             } else {
               sessionStorage.setItem('uaemex_user', JSON.stringify(userWithExpiry));
               if (userData.token) sessionStorage.setItem('uaemex_token', userData.token);
@@ -698,6 +709,7 @@ export default function App() {
               localStorage.removeItem('uaemex_token');
             }
             setUser(userWithExpiry);
+            setAuthModalMode(null);
           }}
         />
       )}
