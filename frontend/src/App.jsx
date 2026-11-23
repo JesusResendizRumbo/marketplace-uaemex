@@ -237,11 +237,19 @@ export default function App() {
   };
 
   const handleStartChat = (product) => {
+    if (!user) {
+      setAuthModalMode('login');
+      return;
+    }
     setSelectedProduct(null);
     setActiveChatProduct(product);
   };
 
   const handleStartCheckout = (product) => {
+    if (!user) {
+      setAuthModalMode('login');
+      return;
+    }
     setSelectedProduct(null);
     setCheckoutProduct(product);
   };
@@ -256,6 +264,10 @@ export default function App() {
   };
 
   const handleContactReporter = (item) => {
+    if (!user) {
+      setAuthModalMode('login');
+      return;
+    }
     setActiveChatProduct({
       isLostItem: true,
       id: item.id,
@@ -309,7 +321,13 @@ export default function App() {
           sessionStorage.removeItem('uaemex_token');
           setUser(null);
         }}
-        onOpenChat={() => setActiveChatProduct(products[0])}
+        onOpenChat={() => {
+          if (!user) {
+            setAuthModalMode('login');
+          } else {
+            setActiveChatProduct(products[0] || { id: 'general', title: 'Comunidad PotroTrade' });
+          }
+        }}
         onOpenProfile={() => setIsProfileOpen(true)}
       />
 
@@ -565,6 +583,10 @@ export default function App() {
           activeChatProduct={activeChatProduct}
           user={user}
           onClose={() => setActiveChatProduct(null)}
+          onOpenAuth={(mode) => {
+            setActiveChatProduct(null);
+            setAuthModalMode(mode);
+          }}
         />
       )}
 

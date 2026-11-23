@@ -277,4 +277,41 @@ export const api = {
       return false;
     }
   },
+
+  // Chat en vivo directo en Supabase
+  async getMessages(productId) {
+    if (!productId) return [];
+    try {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/messages?product_id=eq.${productId}&order=created_at.asc`, {
+        headers: supabaseHeaders
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data)) return data;
+      }
+      return [];
+    } catch (err) {
+      console.warn('Error al obtener mensajes de Supabase:', err);
+      return [];
+    }
+  },
+
+  async sendMessage(messageData) {
+    try {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/messages`, {
+        method: 'POST',
+        headers: supabaseHeaders,
+        body: JSON.stringify(messageData),
+      });
+      if (res.ok) {
+        const json = await res.json().catch(() => null);
+        return { success: true, data: Array.isArray(json) ? json[0] : json };
+      }
+      return null;
+    } catch (err) {
+      console.warn('Error al enviar mensaje a Supabase:', err);
+      return null;
+    }
+  },
 };
+
