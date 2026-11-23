@@ -56,7 +56,7 @@ export const register = async (req, res, next) => {
       }
     }
 
-    const role = normalized.includes('profesor') ? 'teacher' : (normalized.includes('egresado') ? 'alumni' : 'student');
+    const role = normalized.includes('profesor') ? 'teacher' : 'student';
 
     await query(
       `INSERT INTO users (email, password_hash, full_name, role, faculty_id, career, phone_number, is_verified, verification_token, token_expires_at)

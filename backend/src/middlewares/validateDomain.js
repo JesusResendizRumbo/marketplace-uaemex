@@ -2,6 +2,7 @@
  * Middleware para validar que el correo electrónico pertenezca a los dominios autorizados de la UAEMex
  */
 export const ALLOWED_UAEMEX_DOMAINS = [
+  '@uaemex.mx',
   '@alumno.uaemex.mx',
   '@alumnos.uaemex.mx',
   '@egresado.uaemex.mx',
@@ -9,7 +10,6 @@ export const ALLOWED_UAEMEX_DOMAINS = [
   '@profesor.uaemex.mx',
   '@profesores.uaemex.mx',
   '@comunidad.uaemex.mx',
-  '@uaemex.mx',
 ];
 
 export const validateUAEMexEmail = (req, res, next) => {
@@ -30,7 +30,7 @@ export const validateUAEMexEmail = (req, res, next) => {
   if (!isValidDomain) {
     return res.status(400).json({
       success: false,
-      error: 'Dominio no institucional. Se permiten correos oficiales de la UAEMex (@alumno, @egresado, @profesor o @uaemex.mx).',
+      error: 'Dominio no institucional. Se permiten correos oficiales de la UAEMex (@uaemex.mx o @alumno.uaemex.mx).',
     });
   }
 
