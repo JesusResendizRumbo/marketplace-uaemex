@@ -5,6 +5,7 @@ export default function Navbar({
   searchQuery, 
   setSearchQuery, 
   user, 
+  unreadCount = 0,
   onOpenAuth, 
   onOpenPublish, 
   onLogout,
@@ -46,8 +47,35 @@ export default function Navbar({
                 <span className="btn-text-mobile">Vender</span>
               </button>
 
-              <button className="btn btn-secondary btn-icon-nav" onClick={onOpenChat} title="Mis Mensajes">
+              <button 
+                className="btn btn-secondary btn-icon-nav" 
+                onClick={onOpenChat} 
+                title={unreadCount > 0 ? `Mis Mensajes (${unreadCount} nuevos)` : "Mis Mensajes"}
+                style={{ position: 'relative' }}
+              >
                 <MessageSquare size={18} />
+                {unreadCount > 0 && (
+                  <span style={{
+                    position: 'absolute',
+                    top: '-6px',
+                    right: '-6px',
+                    background: '#dc2626',
+                    color: '#ffffff',
+                    fontSize: '0.68rem',
+                    fontWeight: '800',
+                    minWidth: '18px',
+                    height: '18px',
+                    padding: '0 4px',
+                    borderRadius: '10px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    border: '2px solid #ffffff',
+                    boxShadow: '0 2px 5px rgba(220, 38, 38, 0.45)',
+                  }}>
+                    {unreadCount > 9 ? '9+' : unreadCount}
+                  </span>
+                )}
               </button>
 
               <button 

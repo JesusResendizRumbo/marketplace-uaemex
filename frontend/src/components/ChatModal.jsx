@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Send, ShieldCheck, Lock, User, RefreshCw, MessageSquare } from 'lucide-react';
+import { X, Send, ShieldCheck, Lock, User, RefreshCw, MessageSquare, ArrowLeft } from 'lucide-react';
 import { api } from '../services/api.js';
 
-export default function ChatModal({ activeChatProduct, user, onClose, onOpenAuth }) {
+export default function ChatModal({ activeChatProduct, user, onClose, onOpenAuth, onBackToInbox }) {
   const isLostItem = activeChatProduct?.isLostItem;
   const isLost = activeChatProduct?.type === 'lost';
   const messagesEndRef = useRef(null);
@@ -23,6 +23,12 @@ export default function ChatModal({ activeChatProduct, user, onClose, onOpenAuth
       const data = await api.getMessages(activeChatProduct.id);
       if (Array.isArray(data)) {
         setMessages(data);
+        // Marcar como leídos los mensajes que van dirigidos a este usuario
+        if (user?.email) {
+          const myEmail = user.email.toLowerCase();
+          const unreadForMe = data.filter(m => !m.is_read && m.receiver_email?.toLowerCase() === myEmail);
+          unreadForMe.forEach(m => api.markMessageAsRead(m.id));
+        }
       }
     } catch (err) {
       console.warn('Error cargando mensajes:', err);
@@ -113,6 +119,7 @@ export default function ChatModal({ activeChatProduct, user, onClose, onOpenAuth
 
     const payload = {
       product_id: activeChatProduct.id,
+      product_title: activeChatProduct.title || 'Artículo de CU Ecatepec',
       sender_email: user.email,
       sender_name: user.fullName || user.email.split('@')[0].replace('.', ' '),
       receiver_email: targetRecipientEmail,
@@ -149,23 +156,45 @@ export default function ChatModal({ activeChatProduct, user, onClose, onOpenAuth
       <div className="modal-content" style={{ maxWidth: '540px', padding: '0', overflow: 'hidden', display: 'flex', flexDirection: 'column', height: '560px' }} onClick={(e) => e.stopPropagation()}>
         {/* Header del Chat */}
         <div style={{ background: '#004d26', color: '#ffffff', padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span style={{ 
-                width: '10px', 
-                height: '10px', 
-                borderRadius: '50%', 
-                background: '#4ade80', 
-                display: 'inline-block',
-                boxShadow: '0 0 6px #4ade80' 
-              }}></span>
-              <h3 style={{ fontSize: '1.05rem', fontWeight: '800', color: '#ffffff', margin: 0 }}>
-                {partnerName}
-              </h3>
-            </div>
-            <div style={{ fontSize: '0.75rem', color: '#fef08a', display: 'flex', alignItems: 'center', gap: '4px', marginTop: '2px' }}>
-              <ShieldCheck size={14} color="#e5a823" />
-              <span>{activeChatProduct?.faculty_name || 'Comunidad CU UAEM Ecatepec'}</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            {onBackToInbox && (
+              <button 
+                onClick={onBackToInbox}
+                style={{ 
+                  background: 'rgba(255,255,255,0.15)', 
+                  border: 'none', 
+                  color: '#ffffff', 
+                  cursor: 'pointer', 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'center',
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: '50%',
+                }}
+                title="Volver a la bandeja de mensajes"
+              >
+                <ArrowLeft size={18} />
+              </button>
+            )}
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ 
+                  width: '10px', 
+                  height: '10px', 
+                  borderRadius: '50%', 
+                  background: '#4ade80', 
+                  display: 'inline-block',
+                  boxShadow: '0 0 6px #4ade80' 
+                }}></span>
+                <h3 style={{ fontSize: '1.05rem', fontWeight: '800', color: '#ffffff', margin: 0 }}>
+                  {partnerName}
+                </h3>
+              </div>
+              <div style={{ fontSize: '0.75rem', color: '#fef08a', display: 'flex', alignItems: 'center', gap: '4px', marginTop: '2px' }}>
+                <ShieldCheck size={14} color="#e5a823" />
+                <span>{activeChatProduct?.faculty_name || 'Comunidad CU UAEM Ecatepec'}</span>
+              </div>
             </div>
           </div>
           <button className="modal-close" style={{ color: '#ffffff', position: 'static' }} onClick={onClose}>

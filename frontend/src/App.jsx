@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Navbar from './components/Navbar.jsx';
 import Hero from './components/Hero.jsx';
 import ProductCard from './components/ProductCard.jsx';
@@ -7,6 +7,7 @@ import LostFoundSection from './components/LostFoundSection.jsx';
 import PublishModal from './components/PublishModal.jsx';
 import AuthModal from './components/AuthModal.jsx';
 import ChatModal from './components/ChatModal.jsx';
+import MessagesInboxModal from './components/MessagesInboxModal.jsx';
 import CheckoutModal from './components/CheckoutModal.jsx';
 import ProfileModal from './components/ProfileModal.jsx';
 import ReviewModal from './components/ReviewModal.jsx';
@@ -112,9 +113,85 @@ export default function App() {
   const [reportModalInitialType, setReportModalInitialType] = useState('lost');
   const [authModalMode, setAuthModalMode] = useState(null); // null, 'login', 'register'
   const [activeChatProduct, setActiveChatProduct] = useState(null);
+  const [isInboxOpen, setIsInboxOpen] = useState(false);
+  const [userMessages, setUserMessages] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [toastNotification, setToastNotification] = useState(null);
+  const prevUnreadIdsRef = useRef(new Set());
   const [checkoutProduct, setCheckoutProduct] = useState(null);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [reviewModalData, setReviewModalData] = useState(null);
+
+  // Reproducir sonido sutil de notificación al recibir un mensaje
+  const playNotificationSound = () => {
+    try {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (!AudioCtx) return;
+      const ctx = new AudioCtx();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(587.33, ctx.currentTime); // D5
+      osc.frequency.setValueAtTime(880, ctx.currentTime + 0.1); // A5
+      gain.gain.setValueAtTime(0.12, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.35);
+      osc.start();
+      osc.stop(ctx.currentTime + 0.35);
+    } catch {}
+  };
+
+  // Sondeo en vivo de mensajes del usuario para notificaciones y conteo no leído
+  const fetchUserMessages = async () => {
+    if (!user?.email) {
+      setUserMessages([]);
+      setUnreadCount(0);
+      return;
+    }
+    try {
+      const msgs = await api.getUserMessages(user.email);
+      setUserMessages(msgs);
+      const myEmail = user.email.toLowerCase();
+      const unread = msgs.filter(m => m.receiver_email?.toLowerCase() === myEmail && !m.is_read);
+      setUnreadCount(unread.length);
+
+      // Notificar si hay un nuevo mensaje recibido que no se había alertado
+      unread.forEach(m => {
+        if (!prevUnreadIdsRef.current.has(m.id)) {
+          prevUnreadIdsRef.current.add(m.id);
+          playNotificationSound();
+          const relatedProd = products.find(p => p.id === m.product_id);
+          setToastNotification({
+            id: m.id,
+            senderName: m.sender_name || 'Compañero Universitario',
+            content: m.content,
+            productTitle: relatedProd?.title || 'tu publicación',
+            product: relatedProd || {
+              id: m.product_id,
+              title: 'Artículo de CU Ecatepec',
+              price: 'Acordar',
+              seller_name: m.receiver_name,
+              seller_email: m.receiver_email,
+              faculty_name: 'CU UAEM Ecatepec',
+            },
+          });
+          setTimeout(() => {
+            setToastNotification(prev => prev?.id === m.id ? null : prev);
+          }, 8000);
+        }
+      });
+    } catch (err) {
+      console.warn('Error en sondeo de mensajes:', err);
+    }
+  };
+
+  useEffect(() => {
+    if (!user) return;
+    fetchUserMessages();
+    const interval = setInterval(fetchUserMessages, 4000);
+    return () => clearInterval(interval);
+  }, [user?.email, products]);
 
   // Carga inicial y sincronización con el servidor
   useEffect(() => {
@@ -306,6 +383,7 @@ export default function App() {
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
         user={user}
+        unreadCount={unreadCount}
         onOpenAuth={(mode) => setAuthModalMode(mode)}
         onOpenPublish={() => {
           if (!user) {
@@ -320,12 +398,14 @@ export default function App() {
           sessionStorage.removeItem('uaemex_user');
           sessionStorage.removeItem('uaemex_token');
           setUser(null);
+          setUnreadCount(0);
+          setUserMessages([]);
         }}
         onOpenChat={() => {
           if (!user) {
             setAuthModalMode('login');
           } else {
-            setActiveChatProduct(products[0] || { id: 'general', title: 'Comunidad PotroTrade' });
+            setIsInboxOpen(true);
           }
         }}
         onOpenProfile={() => setIsProfileOpen(true)}
@@ -578,11 +658,79 @@ export default function App() {
         />
       )}
 
+      {/* Notificación Flotante / Toast en Tiempo Real al Recibir Mensajes */}
+      {toastNotification && (
+        <div 
+          style={{
+            position: 'fixed',
+            top: '20px',
+            right: '20px',
+            zIndex: 99999,
+            background: '#004d26',
+            color: '#ffffff',
+            padding: '14px 18px',
+            borderRadius: '12px',
+            boxShadow: '0 8px 24px rgba(0, 77, 38, 0.35)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+            cursor: 'pointer',
+            maxWidth: '380px',
+            border: '2px solid #e5a823',
+            animation: 'fadeIn 0.3s ease-out',
+          }}
+          onClick={() => {
+            setActiveChatProduct(toastNotification.product);
+            setToastNotification(null);
+          }}
+        >
+          <div style={{ background: '#e5a823', color: '#004d26', padding: '8px', borderRadius: '50%', display: 'flex', flexShrink: 0 }}>
+            <MessageSquare size={18} />
+          </div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: '0.86rem', fontWeight: '800', color: '#ffffff' }}>
+              💬 {toastNotification.senderName} te escribió
+            </div>
+            <div style={{ fontSize: '0.75rem', color: '#fef08a', marginTop: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              En: {toastNotification.productTitle}
+            </div>
+            <div style={{ fontSize: '0.8rem', color: '#d1fae5', marginTop: '3px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              "{toastNotification.content}"
+            </div>
+          </div>
+          <button 
+            onClick={(e) => { e.stopPropagation(); setToastNotification(null); }}
+            style={{ background: 'none', border: 'none', color: '#ffffff', cursor: 'pointer', padding: '4px', fontSize: '1rem', opacity: 0.8 }}
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
+      {/* Bandeja de Mensajes y Conversaciones */}
+      {isInboxOpen && (
+        <MessagesInboxModal 
+          user={user}
+          userMessages={userMessages}
+          products={products}
+          onClose={() => setIsInboxOpen(false)}
+          onRefreshMessages={fetchUserMessages}
+          onOpenConversation={(product) => {
+            setIsInboxOpen(false);
+            setActiveChatProduct(product);
+          }}
+        />
+      )}
+
       {activeChatProduct && (
         <ChatModal 
           activeChatProduct={activeChatProduct}
           user={user}
           onClose={() => setActiveChatProduct(null)}
+          onBackToInbox={() => {
+            setActiveChatProduct(null);
+            setIsInboxOpen(true);
+          }}
           onOpenAuth={(mode) => {
             setActiveChatProduct(null);
             setAuthModalMode(mode);

@@ -130,6 +130,15 @@ export default function ProductModal({ product, user, onClose, onStartChat, onSt
                   </div>
 
                   <button 
+                    className="btn btn-secondary" 
+                    style={{ width: '100%', padding: '11px', fontSize: '0.92rem', gap: '8px', color: '#004d26', fontWeight: '700' }}
+                    onClick={() => onStartChat(product)}
+                  >
+                    <MessageSquare size={17} />
+                    <span>Ver Mensajes de Compradores (Chat)</span>
+                  </button>
+
+                  <button 
                     className="btn btn-primary" 
                     style={{ width: '100%', padding: '12px', fontSize: '0.95rem', gap: '8px' }}
                     onClick={() => onEditProduct(product)}

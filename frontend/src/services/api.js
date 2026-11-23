@@ -305,12 +305,69 @@ export const api = {
       });
       if (res.ok) {
         const json = await res.json().catch(() => null);
+        // Despachar notificación por correo en segundo plano al vendedor si tiene correo
+        if (messageData.receiver_email && messageData.receiver_email !== messageData.sender_email) {
+          this.notifyNewMessage({
+            toEmail: messageData.receiver_email,
+            recipientName: messageData.receiver_name,
+            senderName: messageData.sender_name,
+            productTitle: messageData.product_title || 'Artículo de CU Ecatepec',
+            messageText: messageData.content,
+          });
+        }
         return { success: true, data: Array.isArray(json) ? json[0] : json };
       }
       return null;
     } catch (err) {
       console.warn('Error al enviar mensaje a Supabase:', err);
       return null;
+    }
+  },
+
+  async getUserMessages(userEmail) {
+    if (!userEmail) return [];
+    try {
+      const res = await fetch(
+        `${SUPABASE_URL}/rest/v1/messages?or=(receiver_email.eq.${encodeURIComponent(userEmail)},sender_email.eq.${encodeURIComponent(userEmail)})&order=created_at.desc`,
+        { headers: supabaseHeaders }
+      );
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data)) return data;
+      }
+      return [];
+    } catch (err) {
+      console.warn('Error al obtener bandeja de mensajes de Supabase:', err);
+      return [];
+    }
+  },
+
+  async markMessageAsRead(messageId) {
+    if (!messageId) return false;
+    try {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/messages?id=eq.${messageId}`, {
+        method: 'PATCH',
+        headers: supabaseHeaders,
+        body: JSON.stringify({ is_read: true }),
+      });
+      return res.ok;
+    } catch (err) {
+      console.warn('Error al marcar mensaje como leído:', err);
+      return false;
+    }
+  },
+
+  async notifyNewMessage({ toEmail, recipientName, senderName, productTitle, messageText }) {
+    if (!toEmail) return false;
+    try {
+      fetch(`${API_BASE_URL}/auth/notify-message`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ toEmail, recipientName, senderName, productTitle, messageText }),
+      }).catch(() => {});
+      return true;
+    } catch {
+      return false;
     }
   },
 };
