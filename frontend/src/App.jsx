@@ -32,7 +32,8 @@ import {
   Sparkles,
   ShoppingBag,
   HeartHandshake,
-  PlusCircle
+  PlusCircle,
+  MessageSquare
 } from 'lucide-react';
 
 const ICON_MAP = {
@@ -118,6 +119,7 @@ export default function App() {
   const [unreadCount, setUnreadCount] = useState(0);
   const [toastNotification, setToastNotification] = useState(null);
   const prevUnreadIdsRef = useRef(new Set());
+  const isFirstFetchRef = useRef(true);
   const [checkoutProduct, setCheckoutProduct] = useState(null);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [reviewModalData, setReviewModalData] = useState(null);
@@ -156,31 +158,37 @@ export default function App() {
       const unread = msgs.filter(m => m.receiver_email?.toLowerCase() === myEmail && !m.is_read);
       setUnreadCount(unread.length);
 
-      // Notificar si hay un nuevo mensaje recibido que no se había alertado
-      unread.forEach(m => {
-        if (!prevUnreadIdsRef.current.has(m.id)) {
-          prevUnreadIdsRef.current.add(m.id);
-          playNotificationSound();
-          const relatedProd = products.find(p => p.id === m.product_id);
-          setToastNotification({
-            id: m.id,
-            senderName: m.sender_name || 'Compañero Universitario',
-            content: m.content,
-            productTitle: relatedProd?.title || 'tu publicación',
-            product: relatedProd || {
-              id: m.product_id,
-              title: 'Artículo de CU Ecatepec',
-              price: 'Acordar',
-              seller_name: m.receiver_name,
-              seller_email: m.receiver_email,
-              faculty_name: 'CU UAEM Ecatepec',
-            },
-          });
-          setTimeout(() => {
-            setToastNotification(prev => prev?.id === m.id ? null : prev);
-          }, 8000);
-        }
-      });
+      if (isFirstFetchRef.current) {
+        // En primera carga registrar los existentes sin hacer sonar la alarma
+        unread.forEach(m => prevUnreadIdsRef.current.add(m.id));
+        isFirstFetchRef.current = false;
+      } else {
+        // En sondeos posteriores, alertar en tiempo real solo los nuevos
+        unread.forEach(m => {
+          if (!prevUnreadIdsRef.current.has(m.id)) {
+            prevUnreadIdsRef.current.add(m.id);
+            playNotificationSound();
+            const relatedProd = products.find(p => p.id === m.product_id);
+            setToastNotification({
+              id: m.id,
+              senderName: m.sender_name || 'Compañero Universitario',
+              content: m.content,
+              productTitle: relatedProd?.title || 'tu publicación',
+              product: relatedProd || {
+                id: m.product_id,
+                title: 'Artículo de CU Ecatepec',
+                price: 'Acordar',
+                seller_name: m.receiver_name,
+                seller_email: m.receiver_email,
+                faculty_name: 'CU UAEM Ecatepec',
+              },
+            });
+            setTimeout(() => {
+              setToastNotification(prev => prev?.id === m.id ? null : prev);
+            }, 8000);
+          }
+        });
+      }
     } catch (err) {
       console.warn('Error en sondeo de mensajes:', err);
     }
