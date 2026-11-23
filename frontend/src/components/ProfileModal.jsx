@@ -23,13 +23,13 @@ export default function ProfileModal({ user, onUpdateUser, onClose, onOpenReview
   const [activeTab, setActiveTab] = useState('perfil'); // 'perfil', 'banco', 'ventas', 'compras'
   
   // Estado del formulario de perfil
-  const [fullName, setFullName] = useState(user?.fullName || 'Estudiante CU Ecatepec');
+  const [fullName, setFullName] = useState(user?.fullName || '');
   const [career, setCareer] = useState(user?.career || 'Ingeniería en Computación');
-  const [phone, setPhone] = useState(user?.phoneNumber || '55 1234 5678');
+  const [phone, setPhone] = useState(user?.phoneNumber || '');
   const [preferredPickup, setPreferredPickup] = useState(user?.preferredPickupSpot || 'Biblioteca Central (CU Ecatepec)');
   
   // Estado de datos bancarios de cobro (CLABE)
-  const [clabe, setClabe] = useState(user?.clabe || '012180015678901234');
+  const [clabe, setClabe] = useState(user?.clabe || '');
   const [bankName, setBankName] = useState(user?.bankName || 'BBVA México');
   
   // Estado de mensajes y simulación de ventas/compras

@@ -15,8 +15,7 @@ export default function ProductModal({ product, user, onClose, onStartChat, onSt
     user && (
       (product.seller_id && user.id === product.seller_id) ||
       (product.user_id && user.id === product.user_id) ||
-      (product.seller_email && user.email === product.seller_email) ||
-      (product.seller_name && user.fullName && product.seller_name.trim().toLowerCase() === user.fullName.trim().toLowerCase())
+      (product.seller_email && user.email && product.seller_email.trim().toLowerCase() === user.email.trim().toLowerCase())
     )
   );
 

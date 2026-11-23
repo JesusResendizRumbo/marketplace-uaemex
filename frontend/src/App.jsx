@@ -74,8 +74,24 @@ export default function App() {
   });
   const [user, setUser] = useState(() => {
     try {
-      const saved = localStorage.getItem('uaemex_user');
-      return saved ? JSON.parse(saved) : null;
+      // 1. Prioridad: sesión activa en la pestaña/ventana actual
+      const sessionSaved = sessionStorage.getItem('uaemex_user');
+      if (sessionSaved) {
+        return JSON.parse(sessionSaved);
+      }
+
+      // 2. Si eligió 'Mantener sesión', validar que no haya expirado en localStorage
+      const localSaved = localStorage.getItem('uaemex_user');
+      if (localSaved) {
+        const parsed = JSON.parse(localSaved);
+        if (parsed.loginExpiresAt && Date.now() > parsed.loginExpiresAt) {
+          localStorage.removeItem('uaemex_user');
+          localStorage.removeItem('uaemex_token');
+          return null;
+        }
+        return parsed;
+      }
+      return null;
     } catch {
       return null;
     }
@@ -288,6 +304,9 @@ export default function App() {
         }}
         onLogout={() => {
           localStorage.removeItem('uaemex_user');
+          localStorage.removeItem('uaemex_token');
+          sessionStorage.removeItem('uaemex_user');
+          sessionStorage.removeItem('uaemex_token');
           setUser(null);
         }}
         onOpenChat={() => setActiveChatProduct(products[0])}
@@ -522,9 +541,21 @@ export default function App() {
         <AuthModal 
           initialMode={authModalMode}
           onClose={() => setAuthModalMode(null)}
-          onAuthSuccess={(userData) => {
-            localStorage.setItem('uaemex_user', JSON.stringify(userData));
-            setUser(userData);
+          onAuthSuccess={(userData, rememberMe = false) => {
+            const userWithExpiry = {
+              ...userData,
+              loginExpiresAt: Date.now() + 24 * 60 * 60 * 1000,
+            };
+            if (rememberMe) {
+              localStorage.setItem('uaemex_user', JSON.stringify(userWithExpiry));
+              if (userData.token) localStorage.setItem('uaemex_token', userData.token);
+            } else {
+              sessionStorage.setItem('uaemex_user', JSON.stringify(userWithExpiry));
+              if (userData.token) sessionStorage.setItem('uaemex_token', userData.token);
+              localStorage.removeItem('uaemex_user');
+              localStorage.removeItem('uaemex_token');
+            }
+            setUser(userWithExpiry);
           }}
         />
       )}
@@ -541,8 +572,17 @@ export default function App() {
         <ProfileModal 
           user={user}
           onUpdateUser={(updated) => {
-            localStorage.setItem('uaemex_user', JSON.stringify(updated));
-            setUser(updated);
+            const updatedWithExpiry = {
+              ...updated,
+              loginExpiresAt: user?.loginExpiresAt || (Date.now() + 24 * 60 * 60 * 1000),
+            };
+            if (localStorage.getItem('uaemex_user')) {
+              localStorage.setItem('uaemex_user', JSON.stringify(updatedWithExpiry));
+            }
+            if (sessionStorage.getItem('uaemex_user')) {
+              sessionStorage.setItem('uaemex_user', JSON.stringify(updatedWithExpiry));
+            }
+            setUser(updatedWithExpiry);
             // Sincronizar publicaciones del usuario con su nombre y carrera actualizados
             setProducts(prev => prev.map(p => {
               if (p.seller_id === updated.id || p.seller_email === updated.email || p.seller_name === user?.fullName) {

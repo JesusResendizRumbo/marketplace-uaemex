@@ -13,6 +13,7 @@ export default function AuthModal({ initialMode = 'login', onClose, onAuthSucces
   const [successMsg, setSuccessMsg] = useState('');
   const [loading, setLoading] = useState(false);
   const [resending, setResending] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
 
   // Registro: Envía los datos al backend y despacha el correo OTP real
   const handleRegister = async (e) => {
@@ -54,10 +55,7 @@ export default function AuthModal({ initialMode = 'login', onClose, onAuthSucces
     setLoading(false);
 
     if (res.success) {
-      if (res.token) {
-        localStorage.setItem('uaemex_token', res.token);
-      }
-      onAuthSuccess({ ...res.user, token: res.token });
+      onAuthSuccess({ ...res.user, token: res.token }, rememberMe);
       onClose();
     } else {
       setError(res.error || 'Código OTP incorrecto o expirado.');
@@ -88,10 +86,7 @@ export default function AuthModal({ initialMode = 'login', onClose, onAuthSucces
     setLoading(false);
 
     if (res.success) {
-      if (res.token) {
-        localStorage.setItem('uaemex_token', res.token);
-      }
-      onAuthSuccess({ ...res.user, token: res.token });
+      onAuthSuccess({ ...res.user, token: res.token }, rememberMe);
       onClose();
     } else if (res.requiresVerification) {
       setError('Tu cuenta requiere verificación por código OTP.');
@@ -242,6 +237,19 @@ export default function AuthModal({ initialMode = 'login', onClose, onAuthSucces
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
               />
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '18px' }}>
+              <input 
+                type="checkbox" 
+                id="rememberMe" 
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+                style={{ width: '16px', height: '16px', accentColor: '#004d26', cursor: 'pointer' }}
+              />
+              <label htmlFor="rememberMe" style={{ fontSize: '0.82rem', color: '#475569', cursor: 'pointer', userSelect: 'none' }}>
+                Mantener sesión iniciada en este dispositivo
+              </label>
             </div>
 
             <button type="submit" className="btn btn-primary" style={{ width: '100%', padding: '12px' }} disabled={loading}>

@@ -91,9 +91,9 @@ export const api = {
           faculty: 'CU UAEM Ecatepec',
           career: 'Ingeniería en Computación',
           averageRating: 5.0,
-          totalReviews: 8,
-          clabe: '012180015678901234',
-          bankName: 'BBVA México',
+          totalReviews: 0,
+          clabe: '',
+          bankName: '',
         },
       };
     }
