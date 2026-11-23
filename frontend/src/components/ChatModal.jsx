@@ -106,6 +106,40 @@ export default function ChatModal({ activeChatProduct, user, onClose, onOpenAuth
     );
   }
 
+  // Determinar si el usuario actual es el vendedor del artículo
+  const isSeller = Boolean(
+    user?.email && (
+      (activeChatProduct?.seller_email && activeChatProduct.seller_email.toLowerCase() === user.email.toLowerCase()) ||
+      (activeChatProduct?.user_id && activeChatProduct.user_id === user.id) ||
+      (activeChatProduct?.seller_id && activeChatProduct.seller_id === user.id)
+    )
+  );
+
+  // Resolver quién es el interlocutor (la otra persona con la que hablo)
+  let resolvedPartnerEmail = activeChatProduct?.partnerEmail || '';
+  let resolvedPartnerName = activeChatProduct?.partnerName || '';
+
+  if (!resolvedPartnerEmail && messages.length > 0 && user?.email) {
+    const myEmail = user.email.toLowerCase();
+    const otherMsg = messages.find(m => m.sender_email && m.sender_email.toLowerCase() !== myEmail);
+    if (otherMsg) {
+      resolvedPartnerEmail = otherMsg.sender_email;
+      resolvedPartnerName = otherMsg.sender_name;
+    }
+  }
+
+  if (!resolvedPartnerEmail) {
+    if (isSeller) {
+      resolvedPartnerEmail = '';
+      resolvedPartnerName = 'Comprador Interesado';
+    } else {
+      resolvedPartnerEmail = activeChatProduct?.seller_email || activeChatProduct?.reporter_email || '';
+      resolvedPartnerName = activeChatProduct?.seller_name || activeChatProduct?.reporter_name || (isLostItem ? 'Reportante' : 'Vendedor Universitario');
+    }
+  }
+
+  const partnerName = resolvedPartnerName || (isSeller ? 'Comprador Interesado' : 'Vendedor Universitario');
+
   const handleSend = async (e) => {
     e.preventDefault();
     if (!inputMessage.trim() || sending) return;
@@ -114,8 +148,8 @@ export default function ChatModal({ activeChatProduct, user, onClose, onOpenAuth
     setInputMessage('');
     setSending(true);
 
-    const targetRecipientEmail = activeChatProduct?.seller_email || activeChatProduct?.reporter_email || '';
-    const targetRecipientName = activeChatProduct?.seller_name || activeChatProduct?.reporter_name || 'Compañero CU Ecatepec';
+    const targetRecipientEmail = resolvedPartnerEmail || (isSeller ? '' : (activeChatProduct?.seller_email || ''));
+    const targetRecipientName = partnerName;
 
     const payload = {
       product_id: activeChatProduct.id,
@@ -148,8 +182,6 @@ export default function ChatModal({ activeChatProduct, user, onClose, onOpenAuth
       setSending(false);
     }
   };
-
-  const partnerName = activeChatProduct?.seller_name || activeChatProduct?.reporter_name || (isLostItem ? 'Reportante' : 'Vendedor Universitario');
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -193,7 +225,7 @@ export default function ChatModal({ activeChatProduct, user, onClose, onOpenAuth
               </div>
               <div style={{ fontSize: '0.75rem', color: '#fef08a', display: 'flex', alignItems: 'center', gap: '4px', marginTop: '2px' }}>
                 <ShieldCheck size={14} color="#e5a823" />
-                <span>{activeChatProduct?.faculty_name || 'Comunidad CU UAEM Ecatepec'}</span>
+                <span>{isSeller ? (resolvedPartnerEmail || 'Compañero CU UAEM Ecatepec') : (activeChatProduct?.faculty_name || 'Comunidad CU UAEM Ecatepec')}</span>
               </div>
             </div>
           </div>

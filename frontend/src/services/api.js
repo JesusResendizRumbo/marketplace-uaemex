@@ -298,10 +298,19 @@ export const api = {
 
   async sendMessage(messageData) {
     try {
+      const supabasePayload = {
+        product_id: messageData.product_id,
+        sender_email: messageData.sender_email,
+        sender_name: messageData.sender_name,
+        receiver_email: messageData.receiver_email,
+        receiver_name: messageData.receiver_name,
+        content: messageData.content,
+      };
+
       const res = await fetch(`${SUPABASE_URL}/rest/v1/messages`, {
         method: 'POST',
         headers: supabaseHeaders,
-        body: JSON.stringify(messageData),
+        body: JSON.stringify(supabasePayload),
       });
       if (res.ok) {
         const json = await res.json().catch(() => null);

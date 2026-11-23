@@ -222,7 +222,11 @@ export default function MessagesInboxModal({
               return (
                 <div
                   key={convo.key}
-                  onClick={() => onOpenConversation(convo.product)}
+                  onClick={() => onOpenConversation({
+                    ...convo.product,
+                    partnerEmail: convo.partnerEmail,
+                    partnerName: convo.partnerName,
+                  })}
                   style={{
                     background: '#ffffff',
                     borderRadius: '12px',
