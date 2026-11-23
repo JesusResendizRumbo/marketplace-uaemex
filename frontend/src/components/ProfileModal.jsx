@@ -15,11 +15,13 @@ import {
   Package, 
   ShoppingBag,
   Star,
-  ArrowRight
+  ArrowRight,
+  RotateCcw,
+  Bookmark
 } from 'lucide-react';
 import { MOCK_CAMPUS } from '../data/mockData.js';
 
-export default function ProfileModal({ user, onUpdateUser, onClose, onOpenReviewForProduct }) {
+export default function ProfileModal({ user, onUpdateUser, onClose, onOpenReviewForProduct, products, onUpdateProductStatus }) {
   const [activeTab, setActiveTab] = useState('perfil'); // 'perfil', 'banco', 'ventas', 'compras'
   
   // Estado del formulario de perfil
@@ -38,6 +40,20 @@ export default function ProfileModal({ user, onUpdateUser, onClose, onOpenReview
   const [deliverySuccessMsg, setDeliverySuccessMsg] = useState('');
   const [salesList, setSalesList] = useState([]);
   const [purchasesList, setPurchasesList] = useState([]);
+
+  // Filtrar las publicaciones y ventas reales del usuario
+  const userProducts = (products || []).filter(p => {
+    if (!user) return false;
+    return (
+      (p.seller_id && p.seller_id === user.id) ||
+      (p.user_id && p.user_id === user.id) ||
+      (p.seller_email && user.email && p.seller_email.trim().toLowerCase() === user.email.trim().toLowerCase())
+    );
+  });
+
+  const cashSoldProducts = userProducts.filter(p => p.status === 'sold');
+  const totalCashEarned = cashSoldProducts.reduce((acc, p) => acc + (parseFloat(p.price) || 0), 0);
+  const activeProducts = userProducts.filter(p => p.status !== 'sold');
 
   const handleSaveProfile = (e) => {
     e.preventDefault();
@@ -325,63 +341,191 @@ export default function ProfileModal({ user, onUpdateUser, onClose, onOpenReview
 
           {/* TAB 3: MIS VENTAS Y LIBERAR FONDOS */}
           {activeTab === 'ventas' && (
-            <div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               {deliverySuccessMsg && (
-                <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', color: '#15803d', padding: '12px', borderRadius: '10px', fontSize: '0.82rem', marginBottom: '16px', display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
+                <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', color: '#15803d', padding: '12px', borderRadius: '10px', fontSize: '0.82rem', display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
                   <CheckCircle2 size={18} style={{ flexShrink: 0, marginTop: '2px' }} />
                   <div>{deliverySuccessMsg}</div>
                 </div>
               )}
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                {salesList.map((sale) => (
-                  <div key={sale.id} style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '16px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                      <div>
-                        <h4 style={{ fontSize: '0.95rem', fontWeight: '700', color: '#0f172a' }}>{sale.title}</h4>
-                        <div style={{ fontSize: '0.78rem', color: '#64748b', marginTop: '2px' }}>Comprador: <strong>{sale.buyer}</strong></div>
-                      </div>
-                      <div style={{ fontSize: '1.1rem', fontWeight: '800', color: '#004d26' }}>${sale.amount.toFixed(2)} MXN</div>
-                    </div>
+              {/* Tarjetas KPI de Ventas en Efectivo en CU Ecatepec */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '10px' }}>
+                <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '10px', padding: '12px', textAlign: 'center' }}>
+                  <div style={{ fontSize: '0.72rem', color: '#166534', fontWeight: '700', textTransform: 'uppercase' }}>Ganado en Efectivo</div>
+                  <div style={{ fontSize: '1.25rem', fontWeight: '800', color: '#004d26', marginTop: '2px' }}>${totalCashEarned.toFixed(2)} MXN</div>
+                </div>
+                <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '12px', textAlign: 'center' }}>
+                  <div style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: '700', textTransform: 'uppercase' }}>Entregados en Mano</div>
+                  <div style={{ fontSize: '1.25rem', fontWeight: '800', color: '#0f172a', marginTop: '2px' }}>{cashSoldProducts.length}</div>
+                </div>
+                <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '12px', textAlign: 'center' }}>
+                  <div style={{ fontSize: '0.72rem', color: '#64748b', fontWeight: '700', textTransform: 'uppercase' }}>En Catálogo Activo</div>
+                  <div style={{ fontSize: '1.25rem', fontWeight: '800', color: '#004d26', marginTop: '2px' }}>{activeProducts.length}</div>
+                </div>
+              </div>
 
-                    <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: '1px solid #e2e8f0' }}>
-                      {sale.status === 'held_in_escrow' ? (
-                        <div>
-                          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: '#fef3c7', color: '#b45309', padding: '4px 10px', borderRadius: '12px', fontSize: '0.72rem', fontWeight: '700', marginBottom: '10px' }}>
-                            ⏳ Fondos en Custodia (Esperando entrega en CU Ecatepec)
-                          </div>
-                          
-                          <div style={{ display: 'flex', gap: '8px', marginTop: '6px' }}>
-                            <input 
-                              type="text" 
-                              className="form-input" 
-                              placeholder="Código de entrega de 4 dígitos"
-                              maxLength={4}
-                              style={{ width: '180px', textAlign: 'center', letterSpacing: '3px', fontWeight: '800' }}
-                              value={inputDeliveryCode}
-                              onChange={(e) => setInputDeliveryCode(e.target.value)}
-                            />
-                            <button 
-                              type="button" 
-                              className="btn btn-gold" 
-                              style={{ padding: '8px 14px', fontSize: '0.8rem' }}
-                              onClick={() => handleValidateDelivery(sale.id, sale.correctCode)}
-                            >
-                              <span>Liberar y Depositar a mi CLABE</span>
-                            </button>
-                          </div>
-                        </div>
-                      ) : (
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.78rem' }}>
-                          <span style={{ color: '#15803d', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                            <CheckCircle2 size={14} /> Fondos transferidos a tu CLABE ({sale.depositedTo})
-                          </span>
-                          <span style={{ color: '#94a3b8' }}>{sale.date}</span>
-                        </div>
-                      )}
-                    </div>
+              {/* Lista de Publicaciones y Estado de Liberación */}
+              <div>
+                <h4 style={{ fontSize: '0.92rem', fontWeight: '700', color: '#0f172a', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <Package size={16} color="#004d26" />
+                  <span>Tus Publicaciones y Cobros en Efectivo</span>
+                </h4>
+
+                {userProducts.length === 0 ? (
+                  <div style={{ textAlign: 'center', padding: '30px 20px', background: '#f8fafc', borderRadius: '10px', border: '1px dashed #cbd5e1' }}>
+                    <ShoppingBag size={32} style={{ color: '#94a3b8', margin: '0 auto 8px auto' }} />
+                    <div style={{ fontWeight: '700', color: '#0f172a', fontSize: '0.88rem' }}>No tienes publicaciones registradas</div>
+                    <p style={{ fontSize: '0.78rem', color: '#64748b', marginTop: '4px' }}>
+                      Publica libros, calculadoras o artículos para empezar a vender en CU Ecatepec.
+                    </p>
                   </div>
-                ))}
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    {userProducts.map((prod) => {
+                      const isSold = prod.status === 'sold';
+                      const isReserved = prod.status === 'reserved';
+                      const img = prod.images && prod.images.length > 0 ? prod.images[0] : 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=150&q=80';
+
+                      return (
+                        <div key={prod.id} style={{ 
+                          background: '#ffffff', 
+                          border: isSold ? '1.5px solid #86efac' : '1px solid #e2e8f0', 
+                          borderRadius: '10px', 
+                          padding: '12px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          gap: '12px'
+                        }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
+                            <img src={img} alt={prod.title} style={{ width: '48px', height: '48px', borderRadius: '8px', objectFit: 'cover', flexShrink: 0 }} />
+                            <div style={{ minWidth: 0 }}>
+                              <div style={{ fontWeight: '700', fontSize: '0.88rem', color: '#0f172a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                {prod.title}
+                              </div>
+                              <div style={{ fontSize: '0.8rem', fontWeight: '800', color: '#004d26', marginTop: '2px' }}>
+                                ${parseFloat(prod.price).toFixed(2)} MXN
+                              </div>
+                              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '0.7rem', fontWeight: '700', marginTop: '3px', color: isSold ? '#16a34a' : isReserved ? '#d97706' : '#059669' }}>
+                                {isSold ? '✅ Vendido por Efectivo' : isReserved ? '⏳ Apartado' : '🟢 Disponible'}
+                              </div>
+                            </div>
+                          </div>
+
+                          <div style={{ flexShrink: 0 }}>
+                            {isSold ? (
+                              <button
+                                type="button"
+                                className="btn btn-secondary"
+                                style={{ padding: '6px 10px', fontSize: '0.75rem', gap: '4px' }}
+                                onClick={() => {
+                                  if (window.confirm(`¿Deseas reactivar "${prod.title}" como DISPONIBLE en el catálogo?`)) {
+                                    if (onUpdateProductStatus) onUpdateProductStatus(prod.id, 'available');
+                                  }
+                                }}
+                              >
+                                <RotateCcw size={12} />
+                                <span>Reactivar</span>
+                              </button>
+                            ) : (
+                              <button
+                                type="button"
+                                className="btn"
+                                style={{ 
+                                  background: '#059669', 
+                                  color: '#ffffff', 
+                                  border: 'none', 
+                                  padding: '7px 12px', 
+                                  borderRadius: '6px', 
+                                  fontSize: '0.76rem', 
+                                  fontWeight: '700',
+                                  cursor: 'pointer',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '4px'
+                                }}
+                                onClick={() => {
+                                  if (window.confirm(`¿Confirmas que ya entregaste "${prod.title}" y recibiste el pago en efectivo en CU Ecatepec?\n\nSe marcará como VENDIDO y liberado.`)) {
+                                    if (onUpdateProductStatus) onUpdateProductStatus(prod.id, 'sold');
+                                  }
+                                }}
+                              >
+                                <DollarSign size={13} />
+                                <span>Vendido en Efectivo</span>
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* Sección de Ventas Protegidas Escrow / CLABE */}
+              <div style={{ marginTop: '8px', paddingTop: '16px', borderTop: '1px solid #e2e8f0' }}>
+                <h4 style={{ fontSize: '0.92rem', fontWeight: '700', color: '#0f172a', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <ShieldCheck size={16} color="#e5a823" />
+                  <span>Ventas Protegidas con Tarjeta (Custodia Escrow)</span>
+                </h4>
+
+                {salesList.length === 0 ? (
+                  <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '10px', padding: '14px', fontSize: '0.78rem', color: '#64748b', lineHeight: '1.5' }}>
+                    🏛️ <strong>Protección Universitaria:</strong> Cuando un comprador te pague con tarjeta mediante la pasarela protegida de CU Ecatepec, el pago quedará aquí en custodia. Al hacer la entrega física, pídele su <strong>código de 4 dígitos</strong>, ingrésalo aquí y el dinero se transferirá de inmediato a tu cuenta CLABE registrada.
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    {salesList.map((sale) => (
+                      <div key={sale.id} style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '16px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                          <div>
+                            <h4 style={{ fontSize: '0.95rem', fontWeight: '700', color: '#0f172a' }}>{sale.title}</h4>
+                            <div style={{ fontSize: '0.78rem', color: '#64748b', marginTop: '2px' }}>Comprador: <strong>{sale.buyer}</strong></div>
+                          </div>
+                          <div style={{ fontSize: '1.1rem', fontWeight: '800', color: '#004d26' }}>${sale.amount.toFixed(2)} MXN</div>
+                        </div>
+
+                        <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: '1px solid #e2e8f0' }}>
+                          {sale.status === 'held_in_escrow' ? (
+                            <div>
+                              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: '#fef3c7', color: '#b45309', padding: '4px 10px', borderRadius: '12px', fontSize: '0.72rem', fontWeight: '700', marginBottom: '10px' }}>
+                                ⏳ Fondos en Custodia (Esperando entrega en CU Ecatepec)
+                              </div>
+                              
+                              <div style={{ display: 'flex', gap: '8px', marginTop: '6px' }}>
+                                <input 
+                                  type="text" 
+                                  className="form-input" 
+                                  placeholder="Código de entrega de 4 dígitos"
+                                  maxLength={4}
+                                  style={{ width: '180px', textAlign: 'center', letterSpacing: '3px', fontWeight: '800' }}
+                                  value={inputDeliveryCode}
+                                  onChange={(e) => setInputDeliveryCode(e.target.value)}
+                                />
+                                <button 
+                                  type="button" 
+                                  className="btn btn-gold" 
+                                  style={{ padding: '8px 14px', fontSize: '0.8rem' }}
+                                  onClick={() => handleValidateDelivery(sale.id, sale.correctCode)}
+                                >
+                                  <span>Liberar y Depositar a mi CLABE</span>
+                                </button>
+                              </div>
+                            </div>
+                          ) : (
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.78rem' }}>
+                              <span style={{ color: '#15803d', fontWeight: '700', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                <CheckCircle2 size={14} /> Fondos transferidos a tu CLABE ({sale.depositedTo})
+                              </span>
+                              <span style={{ color: '#94a3b8' }}>{sale.date}</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           )}

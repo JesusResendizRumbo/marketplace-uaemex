@@ -279,6 +279,13 @@ export default function App() {
     return true;
   });
 
+  // Los artículos disponibles o apartados van primero; los vendidos por efectivo al final
+  const sortedFilteredProducts = [...filteredProducts].sort((a, b) => {
+    if (a.status === 'sold' && b.status !== 'sold') return 1;
+    if (a.status !== 'sold' && b.status === 'sold') return -1;
+    return 0;
+  });
+
   const handlePublish = (product, isEdit = false) => {
     setProducts(prev => {
       let updated;
@@ -319,6 +326,34 @@ export default function App() {
       return updated;
     });
     setSelectedProduct(null);
+  };
+
+  const handleUpdateProductStatus = async (productId, newStatus) => {
+    // 1. Actualización optimista en React y localStorage
+    setProducts(prev => {
+      const updated = prev.map(p => p.id === productId ? { ...p, status: newStatus } : p);
+      try {
+        localStorage.setItem('potrotrade_products', JSON.stringify(updated));
+      } catch (err) {
+        console.warn('Error actualizando localStorage:', err);
+      }
+      return updated;
+    });
+
+    if (selectedProduct && selectedProduct.id === productId) {
+      setSelectedProduct(prev => prev ? { ...prev, status: newStatus } : null);
+    }
+
+    if (activeChatProduct && activeChatProduct.id === productId) {
+      setActiveChatProduct(prev => prev ? { ...prev, status: newStatus } : null);
+    }
+
+    // 2. Persistir en Supabase
+    try {
+      await api.updateProduct(productId, { status: newStatus });
+    } catch (err) {
+      console.warn('Error actualizando estado en Supabase:', err);
+    }
   };
 
   const handleStartChat = (product) => {
@@ -567,7 +602,7 @@ export default function App() {
                 </div>
               ) : (
                 <div className="products-grid">
-                  {filteredProducts.map(p => (
+                  {sortedFilteredProducts.map(p => (
                     <ProductCard 
                       key={p.id} 
                       product={p} 
@@ -615,6 +650,7 @@ export default function App() {
           onStartCheckout={handleStartCheckout}
           onEditProduct={handleEditProduct}
           onDeleteProduct={handleDeleteProduct}
+          onUpdateStatus={handleUpdateProductStatus}
         />
       )}
 
@@ -624,7 +660,7 @@ export default function App() {
           user={user}
           onClose={() => setCheckoutProduct(null)}
           onPaymentSuccess={(productId) => {
-            setProducts(products.map(p => p.id === productId ? { ...p, status: 'reserved' } : p));
+            handleUpdateProductStatus(productId, 'reserved');
           }}
         />
       )}
@@ -743,12 +779,15 @@ export default function App() {
             setActiveChatProduct(null);
             setAuthModalMode(mode);
           }}
+          onUpdateProductStatus={handleUpdateProductStatus}
         />
       )}
 
       {isProfileOpen && (
         <ProfileModal 
           user={user}
+          products={products}
+          onUpdateProductStatus={handleUpdateProductStatus}
           onUpdateUser={(updated) => {
             const updatedWithExpiry = {
               ...updated,

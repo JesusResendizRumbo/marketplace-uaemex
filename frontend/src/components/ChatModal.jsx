@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Send, ShieldCheck, Lock, User, RefreshCw, MessageSquare, ArrowLeft } from 'lucide-react';
+import { X, Send, ShieldCheck, Lock, User, RefreshCw, MessageSquare, ArrowLeft, CheckCircle2, DollarSign, RotateCcw } from 'lucide-react';
 import { api } from '../services/api.js';
 
-export default function ChatModal({ activeChatProduct, user, onClose, onOpenAuth, onBackToInbox }) {
+export default function ChatModal({ activeChatProduct, user, onClose, onOpenAuth, onBackToInbox, onUpdateProductStatus }) {
   const isLostItem = activeChatProduct?.isLostItem;
   const isLost = activeChatProduct?.type === 'lost';
   const messagesEndRef = useRef(null);
@@ -244,6 +244,98 @@ export default function ChatModal({ activeChatProduct, user, onClose, onOpenAuth
             <span style={{ fontWeight: '800', color: '#004d26', fontSize: '0.8rem' }}>
               {isLostItem ? (activeChatProduct.location_details || 'CU Ecatepec') : `$${activeChatProduct.price} MXN`}
             </span>
+          </div>
+        )}
+
+        {/* Barra de Acción Rápida: Vendido por Efectivo para el Vendedor */}
+        {isSeller && !isLostItem && activeChatProduct && (
+          <div style={{ 
+            background: activeChatProduct.status === 'sold' ? '#ecfdf5' : '#f0fdf4', 
+            borderBottom: '1px solid #bbf7d0', 
+            padding: '8px 16px', 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'space-between',
+            fontSize: '0.78rem',
+            gap: '8px'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#166534' }}>
+              <CheckCircle2 size={15} color="#059669" />
+              <span>
+                {activeChatProduct.status === 'sold' 
+                  ? 'Venta en efectivo concretada (Producto liberado).' 
+                  : '¿Acordaron el pago en efectivo en CU Ecatepec?'}
+              </span>
+            </div>
+            {activeChatProduct.status === 'sold' ? (
+              <button
+                type="button"
+                onClick={() => {
+                  if (window.confirm('¿Deseas reactivar este producto como DISPONIBLE en el catálogo?')) {
+                    if (onUpdateProductStatus) onUpdateProductStatus(activeChatProduct.id, 'available');
+                  }
+                }}
+                style={{
+                  background: '#ffffff',
+                  color: '#166534',
+                  border: '1px solid #bbf7d0',
+                  padding: '3px 9px',
+                  borderRadius: '6px',
+                  fontSize: '0.72rem',
+                  fontWeight: '700',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px'
+                }}
+              >
+                <RotateCcw size={12} />
+                <span>Reactivar</span>
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={async () => {
+                  if (window.confirm(`¿Confirmas que ya entregaste "${activeChatProduct.title}" y recibiste el pago en efectivo en CU Ecatepec?\n\nSe marcará como VENDIDO y liberado.`)) {
+                    if (onUpdateProductStatus) {
+                      await onUpdateProductStatus(activeChatProduct.id, 'sold');
+                    }
+                    const closeMsg = {
+                      product_id: activeChatProduct.id,
+                      product_title: activeChatProduct.title || 'Artículo de CU Ecatepec',
+                      sender_email: user.email,
+                      sender_name: user.fullName || user.email.split('@')[0].replace('.', ' '),
+                      receiver_email: resolvedPartnerEmail || '',
+                      receiver_name: partnerName,
+                      content: '🤝 ¡Trato cerrado! He marcado el artículo como entregado y pagado en efectivo en CU Ecatepec. ¡Muchas gracias!',
+                    };
+                    try {
+                      await api.sendMessage(closeMsg);
+                      loadMessages();
+                    } catch (err) {
+                      console.warn('Error enviando mensaje de cierre:', err);
+                    }
+                  }
+                }}
+                style={{
+                  background: '#059669',
+                  color: '#ffffff',
+                  border: 'none',
+                  padding: '5px 11px',
+                  borderRadius: '6px',
+                  fontSize: '0.74rem',
+                  fontWeight: '700',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  boxShadow: '0 2px 4px rgba(5, 150, 105, 0.2)'
+                }}
+              >
+                <DollarSign size={13} />
+                <span>Marcar Vendido por Efectivo</span>
+              </button>
+            )}
           </div>
         )}
 

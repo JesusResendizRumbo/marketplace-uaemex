@@ -1,5 +1,5 @@
 import React from 'react';
-import { MapPin, Star, Sparkles, RefreshCw } from 'lucide-react';
+import { MapPin, Star, Sparkles, RefreshCw, CheckCircle2, Bookmark } from 'lucide-react';
 
 const CONDITION_LABELS = {
   new: 'Nuevo',
@@ -13,11 +13,37 @@ export default function ProductCard({ product, onSelectProduct }) {
     ? product.images[0] 
     : 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=600&q=80';
 
+  const isSold = product.status === 'sold';
+  const isReserved = product.status === 'reserved';
+
   return (
-    <div className="product-card" onClick={() => onSelectProduct(product)}>
-      <div className="product-img-wrapper">
+    <div 
+      className="product-card" 
+      onClick={() => onSelectProduct(product)}
+      style={{
+        opacity: isSold ? 0.85 : 1,
+        border: isSold ? '1px dashed #cbd5e1' : undefined,
+      }}
+    >
+      <div className="product-img-wrapper" style={{ filter: isSold ? 'grayscale(35%)' : 'none' }}>
         <img src={imageUrl} alt={product.title} className="product-img" loading="lazy" />
         
+        {isSold && (
+          <div className="product-badge" style={{ background: '#dc2626', top: '8px', right: '8px', left: 'auto', fontWeight: '800' }}>
+            <span style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
+              <CheckCircle2 size={11} /> Vendido
+            </span>
+          </div>
+        )}
+
+        {!isSold && isReserved && (
+          <div className="product-badge" style={{ background: '#d97706', top: '8px', right: '8px', left: 'auto', fontWeight: '800' }}>
+            <span style={{ display: 'flex', alignItems: 'center', gap: '3px' }}>
+              <Bookmark size={11} /> Apartado
+            </span>
+          </div>
+        )}
+
         {product.is_exchangeable && (
           <div className="product-badge" style={{ background: '#0284c7' }}>
             <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
@@ -33,7 +59,9 @@ export default function ProductCard({ product, onSelectProduct }) {
 
       <div className="product-body">
         <div className="product-category">{product.category_name || 'Material Universitario'}</div>
-        <h3 className="product-title">{product.title}</h3>
+        <h3 className="product-title" style={{ color: isSold ? '#64748b' : '#0f172a' }}>
+          {product.title}
+        </h3>
         
         <div className="product-location">
           <MapPin size={14} style={{ color: '#004d26', flexShrink: 0 }} />
@@ -41,8 +69,13 @@ export default function ProductCard({ product, onSelectProduct }) {
         </div>
 
         <div className="product-footer">
-          <div className="product-price">
+          <div className="product-price" style={{ color: isSold ? '#64748b' : '#004d26' }}>
             {product.price > 0 ? `$${parseFloat(product.price).toFixed(2)}` : 'Donación / $0'}
+            {isSold && (
+              <span style={{ fontSize: '0.68rem', fontWeight: '700', color: '#dc2626', marginLeft: '6px' }}>
+                (Efectivo)
+              </span>
+            )}
           </div>
 
           <div className="seller-meta">
