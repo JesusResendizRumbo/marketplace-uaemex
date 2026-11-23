@@ -87,7 +87,7 @@ export const api = {
           id: `user-${Date.now()}`,
           email,
           fullName: email.split('@')[0].replace('.', ' '),
-          role: email.includes('profesor') ? 'teacher' : 'student',
+          role: email.includes('profesor') ? 'teacher' : (email.includes('egresado') ? 'alumni' : 'student'),
           faculty: 'CU UAEM Ecatepec',
           career: 'Ingeniería en Computación',
           averageRating: 5.0,

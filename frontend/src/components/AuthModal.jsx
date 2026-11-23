@@ -22,8 +22,19 @@ export default function AuthModal({ initialMode = 'login', onClose, onAuthSucces
     setSuccessMsg('');
 
     const normalized = email.trim().toLowerCase();
-    if (!normalized.endsWith('@alumno.uaemex.mx') && !normalized.endsWith('@profesor.uaemex.mx') && !normalized.endsWith('@uaemex.mx')) {
-      setError('Debes ingresar tu correo institucional (@alumno.uaemex.mx o @profesor.uaemex.mx).');
+    const isUaemex = 
+      normalized.endsWith('@alumno.uaemex.mx') ||
+      normalized.endsWith('@alumnos.uaemex.mx') ||
+      normalized.endsWith('@egresado.uaemex.mx') ||
+      normalized.endsWith('@egresados.uaemex.mx') ||
+      normalized.endsWith('@profesor.uaemex.mx') ||
+      normalized.endsWith('@profesores.uaemex.mx') ||
+      normalized.endsWith('@comunidad.uaemex.mx') ||
+      normalized.endsWith('@uaemex.mx') ||
+      normalized.endsWith('.uaemex.mx');
+
+    if (!isUaemex) {
+      setError('Debes ingresar tu correo institucional oficial (@alumno, @egresado, @profesor o @uaemex.mx).');
       return;
     }
 
@@ -162,7 +173,7 @@ export default function AuthModal({ initialMode = 'login', onClose, onAuthSucces
             {mode === 'otp' ? (
               <span>Código enviado a: <strong style={{ color: '#004d26' }}>{email}</strong></span>
             ) : (
-              'Acceso exclusivo para Centro Universitario UAEM Ecatepec'
+              'Acceso exclusivo para la comunidad de CU Ecatepec (Alumnos, Egresados y Docentes)'
             )}
           </p>
         </div>
@@ -211,7 +222,7 @@ export default function AuthModal({ initialMode = 'login', onClose, onAuthSucces
               <input 
                 type="email" 
                 className="form-input" 
-                placeholder="ej. estudiante@alumno.uaemex.mx" 
+                placeholder="ej. alumno@alumno.uaemex.mx o egresado@uaemex.mx" 
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -285,17 +296,17 @@ export default function AuthModal({ initialMode = 'login', onClose, onAuthSucces
             </div>
 
             <div className="form-group">
-              <label className="form-label">Correo Universitario (@alumno.uaemex.mx)</label>
+              <label className="form-label">Correo Universitario (@alumno, @egresado o @uaemex.mx)</label>
               <input 
                 type="email" 
                 className="form-input" 
-                placeholder="tunombre@alumno.uaemex.mx" 
+                placeholder="tunombre@alumno.uaemex.mx o @egresado.uaemex.mx" 
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
               />
               <span style={{ fontSize: '0.72rem', color: '#64748b', marginTop: '4px', display: 'block' }}>
-                Te enviaremos un código de seguridad de 6 dígitos a este correo institucional.
+                Te enviaremos un código de seguridad de 6 dígitos a tu correo oficial de la UAEMex.
               </span>
             </div>
 
@@ -393,7 +404,7 @@ export default function AuthModal({ initialMode = 'login', onClose, onAuthSucces
               <input 
                 type="email" 
                 className="form-input" 
-                placeholder="tunombre@alumno.uaemex.mx" 
+                placeholder="tunombre@alumno.uaemex.mx o @egresado.uaemex.mx" 
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}

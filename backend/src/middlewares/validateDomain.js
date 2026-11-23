@@ -3,7 +3,12 @@
  */
 export const ALLOWED_UAEMEX_DOMAINS = [
   '@alumno.uaemex.mx',
+  '@alumnos.uaemex.mx',
+  '@egresado.uaemex.mx',
+  '@egresados.uaemex.mx',
   '@profesor.uaemex.mx',
+  '@profesores.uaemex.mx',
+  '@comunidad.uaemex.mx',
   '@uaemex.mx',
 ];
 
@@ -18,12 +23,14 @@ export const validateUAEMexEmail = (req, res, next) => {
   }
 
   const normalizedEmail = email.trim().toLowerCase();
-  const isValidDomain = ALLOWED_UAEMEX_DOMAINS.some(domain => normalizedEmail.endsWith(domain));
+  const isValidDomain = 
+    ALLOWED_UAEMEX_DOMAINS.some(domain => normalizedEmail.endsWith(domain)) ||
+    normalizedEmail.endsWith('.uaemex.mx');
 
   if (!isValidDomain) {
     return res.status(400).json({
       success: false,
-      error: 'Dominio no institucional. Únicamente se permiten correos oficiales de la UAEMex (@alumno.uaemex.mx o @profesor.uaemex.mx).',
+      error: 'Dominio no institucional. Se permiten correos oficiales de la UAEMex (@alumno, @egresado, @profesor o @uaemex.mx).',
     });
   }
 

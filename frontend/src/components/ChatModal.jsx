@@ -71,7 +71,7 @@ export default function ChatModal({ activeChatProduct, user, onClose, onOpenAuth
           </h3>
 
           <p style={{ fontSize: '0.88rem', color: '#64748b', lineHeight: '1.5', marginBottom: '24px' }}>
-            Por la seguridad de la comunidad de <strong>CU Ecatepec</strong>, solo los alumnos verificados con correo institucional (<strong>@alumno.uaemex.mx</strong>) pueden enviar y recibir mensajes para acordar entregas.
+            Por la seguridad de la comunidad de <strong>CU Ecatepec</strong>, solo los alumnos y egresados verificados con correo institucional (<strong>@alumno, @egresado o @uaemex.mx</strong>) pueden enviar y recibir mensajes para acordar entregas.
           </p>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
